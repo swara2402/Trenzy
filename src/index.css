@@ -1,0 +1,112 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 30 20% 97%;
+    --foreground: 220 20% 10%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 220 20% 10%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 20% 10%;
+
+    --primary: 220 20% 10%;
+    --primary-foreground: 30 20% 97%;
+
+    --secondary: 30 15% 92%;
+    --secondary-foreground: 220 20% 10%;
+
+    --muted: 30 10% 94%;
+    --muted-foreground: 220 10% 46%;
+
+    --accent: 14 90% 58%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 30 15% 90%;
+    --input: 30 15% 90%;
+    --ring: 14 90% 58%;
+
+    --radius: 0.75rem;
+
+    --shadow-sm: 0 1px 3px hsl(220 20% 10% / 0.04);
+    --shadow-md: 0 4px 16px hsl(220 20% 10% / 0.06);
+    --shadow-lg: 0 8px 32px hsl(220 20% 10% / 0.08);
+    --shadow-accent: 0 4px 20px hsl(14 90% 58% / 0.25);
+
+    --font-display: 'Space Grotesk', sans-serif;
+    --font-body: 'Inter', sans-serif;
+  }
+
+  .dark {
+    --background: 220 20% 7%;
+    --foreground: 30 20% 95%;
+    --card: 220 18% 12%;
+    --card-foreground: 30 20% 95%;
+    --border: 220 15% 18%;
+    --input: 220 15% 18%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: var(--font-body);
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-display);
+  }
+}
+
+@layer utilities {
+  .border-border {
+    border-color: rgba(var(--border), 1);
+  }
+
+  .bg-background {
+    background-color: rgba(var(--background), 1);
+  }
+
+  .font-display {
+    font-family: var(--font-display);
+  }
+
+  .font-body {
+    font-family: var(--font-body);
+  }
+
+  .gradient-hero {
+    background: linear-gradient(135deg, 
+      hsl(220 20% 10%) 0%, 
+      hsl(220 25% 18%) 50%, 
+      hsl(170 30% 20%) 100%);
+  }
+
+  .shadow-card {
+    box-shadow: var(--shadow-sm);
+  }
+
+  .shadow-card-hover {
+    box-shadow: var(--shadow-md);
+  }
+
+  .shadow-elevated {
+    box-shadow: var(--shadow-lg);
+  }
+
+  .shadow-accent-glow {
+    box-shadow: var(--shadow-accent);
+  }
+}
