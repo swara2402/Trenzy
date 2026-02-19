@@ -23,10 +23,10 @@
 ### 🔐 Authentication
 - [x] Signup page
 - [x] Login page
+- [x] Logout functionality
 - [ ] JWT authentication
 - [ ] Password hashing
 - [ ] Protected routes
-- [ ] Logout functionality
 
 ### 🛍️ Product Management (User Side)
 - [x] Home page UI
@@ -48,21 +48,22 @@
 - [ ] Cart persistence (DB)
 
 ### 💳 Checkout & Orders
-- [x] Address form
-- [x] Payment method selection
-- [x] Order confirmation page
-- [x] Order ID generation
-- [x] Store order in DB
-- [x] Order tracking page
-- [x] Cancel order option
+- [x] Checkout page
+- [x] Order summary display
+- [ ] Address form (to be implemented)
+- [ ] Payment method selection (to be implemented)
+- [ ] Order confirmation page
+- [ ] Order ID generation
+- [ ] Store order in DB
+- [x] Order tracking page (placeholder)
+- [ ] Cancel order option
 
 ### 👤 User Dashboard
 - [x] Profile page
-- [x] Edit profile
 - [x] My orders
-- [x] Wishlist
+- [x] Edit profile (placeholder)
+- [x] Wishlist (placeholder)
 - [ ] Saved addresses
-- [ ] Logout
 
 ---
 
@@ -159,11 +160,14 @@
 ---
 
 ## 📱 PHASE 9: UI/UX Improvements
-- [ ] Responsive design
+- [x] Responsive design
+- [x] Login/Signup UI improvements
+- [x] Mobile menu functionality
+- [x] Navbar improvements with auth state
 - [ ] Dark mode
-- [ ] Loading animations
-- [ ] Toast notifications
-- [ ] Error handling UI
+- [x] Loading animations
+- [x] Toast notifications
+- [x] Error handling UI
 
 ---
 

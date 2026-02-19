@@ -11,8 +11,12 @@
 
 - [x] **Authentication Flow**
   - [x] Signup form with name, email, and password
-  - [x] Email verification (placeholder for OTP)
   - [x] Login form with email and password
+  - [x] Improved Login/Signup UI design
+  - [x] Logout functionality
+  - [x] Auth state management in Navbar
+  - [x] User dropdown menu with profile/orders links
+  - [x] Email verification (placeholder for OTP)
   - [x] Redirect to Home / Last visited page after login
 
 - [x] **Product Discovery Flow**
@@ -33,17 +37,22 @@
   - [x] Change item quantities and remove items
   - [x] Price breakdown and coupon application
   - [x] Proceed to checkout button
+  - [x] Checkout navigation from cart drawer
 
 - [x] **Checkout Flow**
-  - [x] Enter delivery address
-  - [x] Choose payment method (UPI, Card, COD)
-  - [x] Review order before placing
+  - [x] Checkout page created
+  - [x] Order summary display
+  - [ ] Enter delivery address (to be implemented)
+  - [ ] Choose payment method (UPI, Card, COD) (to be implemented)
+  - [ ] Review order before placing (to be implemented)
 
 - [x] **Order Success**
   - [x] Order confirmation page with Order ID
   - [x] Email/SMS confirmation (placeholder)
 
 - [x] **Post-Purchase Flow**
+  - [x] Profile page created
+  - [x] Orders page created
   - [x] User dashboard with order tracking (placeholder)
   - [x] Cancel or return orders (placeholder)
   - [x] Rate products (placeholder)
@@ -56,10 +65,21 @@
   - [x] Manage users (placeholder)
   - [x] Analytics dashboard (placeholder)
 
+## Recently Completed (Latest Updates)
+- [x] **UI/UX Improvements**
+  - [x] Redesigned Login/Signup pages with modern UI
+  - [x] Fixed Navbar layout and auth state management
+  - [x] Added mobile menu functionality
+  - [x] Created user dropdown menu
+  - [x] Hide Navbar on auth pages
+  - [x] Created Checkout, Profile, and Orders pages
+  - [x] Added all missing routes
+
 ## Remaining Tasks
 - [ ] **Authentication Flow**
   - [ ] Implement OTP/email verification for signup
   - [ ] Add Google login functionality
+  - [ ] Add protected routes
 
 - [ ] **Product Discovery Flow**
   - [ ] Implement machine learning recommendations

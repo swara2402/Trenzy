@@ -2,9 +2,16 @@ import { useCart } from "@/contexts/CartContext";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Minus, Plus, Trash2, ShoppingBag } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 export default function CartDrawer() {
   const { items, isOpen, setIsOpen, removeFromCart, updateQuantity, totalPrice, clearCart } = useCart();
+  const navigate = useNavigate();
+
+  const handleCheckout = () => {
+    setIsOpen(false);
+    navigate("/checkout");
+  };
 
   return (
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
@@ -71,7 +78,10 @@ export default function CartDrawer() {
                 <span className="text-sm text-muted-foreground">Subtotal</span>
                 <span className="text-lg font-bold font-display">${totalPrice.toFixed(2)}</span>
               </div>
-              <Button className="w-full gradient-accent text-accent-foreground font-semibold shadow-accent-glow hover:opacity-90">
+              <Button
+                onClick={handleCheckout}
+                className="w-full gradient-accent text-accent-foreground font-semibold shadow-accent-glow hover:opacity-90"
+              >
                 Checkout — ${totalPrice.toFixed(2)}
               </Button>
               <button
