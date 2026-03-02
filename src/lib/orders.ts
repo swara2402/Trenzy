@@ -1,5 +1,5 @@
-import { supabase } from "./supabaseClient";
 import type { CartItem } from "@/contexts/CartContext";
+import { getStoredUser } from "./auth";
 
 export interface Address {
   fullName: string;
@@ -14,10 +14,19 @@ export interface Address {
 
 export type PaymentMethod = "card" | "upi" | "cod";
 
+export interface OrderItem {
+  product_id: string;
+  product_name: string;
+  product_image: string;
+  product_price: number;
+  quantity: number;
+  subtotal: number;
+}
+
 export interface Order {
   id: string;
   user_id: string;
-  items: CartItem[];
+  items: OrderItem[];
   total_price: number;
   address: Address;
   payment_method: PaymentMethod;
@@ -27,20 +36,51 @@ export interface Order {
   updated_at: string;
 }
 
+export const paymentMethodLabel: Record<PaymentMethod, string> = {
+  card: "Credit / Debit Card",
+  upi: "UPI",
+  cod: "Cash on Delivery",
+};
+
+const ORDERS_KEY = "smartcart_orders";
+
+function getOrdersFromStorage(): Order[] {
+  try {
+    const stored = window.localStorage.getItem(ORDERS_KEY);
+    return stored ? JSON.parse(stored) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveOrdersToStorage(orders: Order[]): void {
+  try {
+    window.localStorage.setItem(ORDERS_KEY, JSON.stringify(orders));
+  } catch {
+    // ignore localStorage errors
+  }
+}
+
 export async function createOrder(
-  userId: string,
+  _userId: string,
   items: CartItem[],
   address: Address,
   paymentMethod: PaymentMethod
 ): Promise<{ order: Order | null; error: Error | null }> {
   try {
+    const user = getStoredUser();
+    if (!user) {
+      return { order: null, error: new Error("User not authenticated") };
+    }
+
     // Generate order ID
-    const orderId = `ORD-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
+    const orderId = `ORD-${Date.now()}-${Math.random().toString(36).slice(2, 11).toUpperCase()}`;
     
     const totalPrice = items.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
 
-    const orderData = {
-      user_id: userId,
+    const orderData: Order = {
+      id: orderId,
+      user_id: user.id,
       items: items.map(({ product, quantity }) => ({
         product_id: product.id,
         product_name: product.name,
@@ -54,39 +94,48 @@ export async function createOrder(
       payment_method: paymentMethod,
       status: "pending",
       order_id: orderId,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
     };
 
-    const { data, error } = await supabase
-      .from("orders")
-      .insert([orderData])
-      .select()
-      .single();
+    // Save to localStorage
+    const orders = getOrdersFromStorage();
+    orders.unshift(orderData);
+    saveOrdersToStorage(orders);
 
-    if (error) {
-      console.error("Error creating order:", error);
-      return { order: null, error: new Error(error.message) };
-    }
-
-    return { order: data as Order, error: null };
+    return { order: orderData, error: null };
   } catch (err) {
     return { order: null, error: err as Error };
   }
 }
 
-export async function getUserOrders(userId: string): Promise<{ orders: Order[]; error: Error | null }> {
+export async function getUserOrders(_userId: string): Promise<{ orders: Order[]; error: Error | null }> {
   try {
-    const { data, error } = await supabase
-      .from("orders")
-      .select("*")
-      .eq("user_id", userId)
-      .order("created_at", { ascending: false });
-
-    if (error) {
-      console.error("Error fetching orders:", error);
-      return { orders: [], error: new Error(error.message) };
+    const user = getStoredUser();
+    if (!user) {
+      return { orders: [], error: new Error("User not authenticated") };
     }
 
-    return { orders: (data || []) as Order[], error: null };
+    const orders = getOrdersFromStorage();
+    const userOrders = orders
+      .filter(order => order.user_id === user.id)
+      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+    return { orders: userOrders, error: null };
+  } catch (err) {
+    return { orders: [], error: err as Error };
+  }
+}
+
+export async function getAllOrders(): Promise<{ orders: Order[]; error: Error | null }> {
+  try {
+    const user = getStoredUser();
+    if (!user || !user.isAdmin) {
+      return { orders: [], error: new Error("Admin access required") };
+    }
+
+    const orders = getOrdersFromStorage();
+    return { orders: orders.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()), error: null };
   } catch (err) {
     return { orders: [], error: err as Error };
   }
@@ -94,18 +143,14 @@ export async function getUserOrders(userId: string): Promise<{ orders: Order[]; 
 
 export async function getOrderById(orderId: string): Promise<{ order: Order | null; error: Error | null }> {
   try {
-    const { data, error } = await supabase
-      .from("orders")
-      .select("*")
-      .eq("order_id", orderId)
-      .single();
-
-    if (error) {
-      console.error("Error fetching order:", error);
-      return { order: null, error: new Error(error.message) };
+    const orders = getOrdersFromStorage();
+    const order = orders.find(o => o.order_id === orderId);
+    
+    if (!order) {
+      return { order: null, error: new Error("Order not found") };
     }
 
-    return { order: data as Order, error: null };
+    return { order, error: null };
   } catch (err) {
     return { order: null, error: err as Error };
   }
@@ -113,15 +158,16 @@ export async function getOrderById(orderId: string): Promise<{ order: Order | nu
 
 export async function cancelOrder(orderId: string): Promise<{ success: boolean; error: Error | null }> {
   try {
-    const { error } = await supabase
-      .from("orders")
-      .update({ status: "cancelled" })
-      .eq("order_id", orderId);
-
-    if (error) {
-      console.error("Error cancelling order:", error);
-      return { success: false, error: new Error(error.message) };
+    const orders = getOrdersFromStorage();
+    const orderIndex = orders.findIndex(o => o.order_id === orderId);
+    
+    if (orderIndex === -1) {
+      return { success: false, error: new Error("Order not found") };
     }
+
+    orders[orderIndex].status = "cancelled";
+    orders[orderIndex].updated_at = new Date().toISOString();
+    saveOrdersToStorage(orders);
 
     return { success: true, error: null };
   } catch (err) {

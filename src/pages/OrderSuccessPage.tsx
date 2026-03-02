@@ -2,7 +2,7 @@ import { Link, useParams } from "react-router-dom";
 import { CheckCircle, Package, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Footer from "@/components/Footer";
-import { getOrderById, type Order } from "@/lib/orders";
+import { getOrderById, paymentMethodLabel, type Order } from "@/lib/orders";
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 
@@ -85,7 +85,7 @@ export default function OrderSuccessPage() {
               </div>
               <div className="flex justify-between items-center pb-4 border-b border-border">
                 <span className="text-sm text-muted-foreground">Payment Method</span>
-                <span className="font-medium capitalize">{order.payment_method.toUpperCase()}</span>
+                <span className="font-medium">{paymentMethodLabel[order.payment_method]}</span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-sm text-muted-foreground">Status</span>

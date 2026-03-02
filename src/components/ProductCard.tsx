@@ -1,8 +1,9 @@
 import { Link } from "react-router-dom";
-import { Star, ShoppingBag } from "lucide-react";
+import { Star, ShoppingBag, Heart } from "lucide-react";
 import { motion } from "framer-motion";
 import type { Product } from "@/lib/data";
 import { useCart } from "@/contexts/CartContext";
+import { useWishlist } from "@/contexts/WishlistContext";
 
 interface Props {
   product: Product;
@@ -11,6 +12,17 @@ interface Props {
 
 export default function ProductCard({ product, index = 0 }: Props) {
   const { addToCart } = useCart();
+  const { wishlist, addToWishlist, removeFromWishlist } = useWishlist();
+  const isInWishlist = wishlist.includes(product.id);
+
+  const handleWishlistClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (isInWishlist) {
+      removeFromWishlist(product.id);
+    } else {
+      addToWishlist(product.id);
+    }
+  };
 
   return (
     <motion.div
@@ -36,6 +48,14 @@ export default function ProductCard({ product, index = 0 }: Props) {
             -{Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)}%
           </span>
         )}
+
+        <button
+          onClick={handleWishlistClick}
+          aria-label={isInWishlist ? `Remove ${product.name} from wishlist` : `Add ${product.name} to wishlist`}
+          className={`absolute left-3 top-3 flex h-9 w-9 items-center justify-center rounded-full bg-background/80 backdrop-blur-sm shadow-md transition-all duration-300 hover:bg-accent hover:text-accent-foreground ${isInWishlist ? "text-accent" : "text-muted-foreground opacity-0 group-hover:opacity-100"}`}
+        >
+          <Heart className={`h-4 w-4 ${isInWishlist ? "fill-current" : ""}`} />
+        </button>
 
         <button
           onClick={() => addToCart(product)}

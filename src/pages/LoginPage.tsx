@@ -2,10 +2,9 @@ import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useNavigate, Link, useLocation } from "react-router-dom";
-import { supabase } from "@/lib/supabaseClient";
+import { login } from "@/lib/auth";
 import { Sparkles, Mail, Lock, ArrowRight } from "lucide-react";
 import { motion } from "framer-motion";
-import { useToast } from "@/hooks/use-toast";
 
 const LoginPage = () => {
   const navigate = useNavigate();
@@ -17,7 +16,6 @@ const LoginPage = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [rememberMe, setRememberMe] = useState(false);
-  const { toast } = useToast();
 
   useEffect(() => {
     try {
@@ -36,59 +34,26 @@ const LoginPage = () => {
     setError(null);
     setLoading(true);
 
-    const { error: signInError } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-
-    setLoading(false);
-
-    if (signInError) {
-      setError(signInError.message);
-      return;
-    }
-
     try {
-      if (rememberMe) {
-        window.localStorage.setItem("smartcart_remember_email", email);
-      } else {
-        window.localStorage.removeItem("smartcart_remember_email");
+      await login(email, password);
+
+      try {
+        if (rememberMe) {
+          window.localStorage.setItem("smartcart_remember_email", email);
+        } else {
+          window.localStorage.removeItem("smartcart_remember_email");
+        }
+      } catch {
+        // ignore localStorage errors
       }
-    } catch {
-      // ignore localStorage errors
+
+      // Redirect to the page user was trying to access, or home
+      navigate(from, { replace: true });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Login failed");
+    } finally {
+      setLoading(false);
     }
-
-    // Redirect to the page user was trying to access, or home
-    navigate(from, { replace: true });
-  };
-
-  const handleForgotPassword = async () => {
-    if (!email) {
-      toast({
-        title: "Add your email",
-        description: "Enter your email address to reset your password.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/login`,
-    });
-
-    if (error) {
-      toast({
-        title: "Reset failed",
-        description: error.message,
-        variant: "destructive",
-      });
-      return;
-    }
-
-    toast({
-      title: "Reset link sent",
-      description: "Check your email for a password reset link.",
-    });
   };
 
   return (
@@ -158,13 +123,6 @@ const LoginPage = () => {
                 />
                 <span>Remember me</span>
               </label>
-              <button
-                type="button"
-                onClick={handleForgotPassword}
-                className="text-accent hover:underline"
-              >
-                Forgot password?
-              </button>
             </div>
 
             {error && (

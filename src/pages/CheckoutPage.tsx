@@ -6,18 +6,18 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import Footer from "@/components/Footer";
-import { supabase } from "@/lib/supabaseClient";
-import { createOrder, type Address, type PaymentMethod } from "@/lib/orders";
+import { createOrder, paymentMethodLabel, type Address, type PaymentMethod } from "@/lib/orders";
+import { getStoredUser, getCurrentUser, type AuthUser } from "@/lib/auth";
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
-import type { User } from "@supabase/supabase-js";
 
 export default function CheckoutPage() {
   const { items, totalPrice, clearCart } = useCart();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(false);
+  const [reviewAccepted, setReviewAccepted] = useState(false);
 
   const [address, setAddress] = useState<Address>({
     fullName: "",
@@ -32,15 +32,41 @@ export default function CheckoutPage() {
 
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("cod");
 
+  const normalizedAddress = {
+    ...address,
+    fullName: address.fullName.trim(),
+    phone: address.phone.trim(),
+    addressLine1: address.addressLine1.trim(),
+    addressLine2: address.addressLine2?.trim() || "",
+    city: address.city.trim(),
+    state: address.state.trim(),
+    zipCode: address.zipCode.trim(),
+    country: address.country.trim(),
+  };
+
+  const isAddressValid =
+    normalizedAddress.fullName.length >= 2 &&
+    normalizedAddress.phone.length >= 8 &&
+    normalizedAddress.addressLine1.length >= 3 &&
+    normalizedAddress.city.length >= 2 &&
+    normalizedAddress.state.length >= 2 &&
+    normalizedAddress.zipCode.length >= 3 &&
+    normalizedAddress.country.length >= 2;
+
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-    });
+    const loadUser = async () => {
+      let storedUser = getStoredUser();
+      if (!storedUser) {
+        storedUser = await getCurrentUser();
+      }
+      setUser(storedUser);
+    };
+    loadUser();
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!user) {
       toast({
         title: "Authentication required",
@@ -51,9 +77,27 @@ export default function CheckoutPage() {
       return;
     }
 
+    if (!isAddressValid) {
+      toast({
+        title: "Invalid address",
+        description: "Please fill all required shipping fields correctly.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!reviewAccepted) {
+      toast({
+        title: "Review required",
+        description: "Please confirm your order details before placing the order.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setLoading(true);
 
-    const { order, error } = await createOrder(user.id, items, address, paymentMethod);
+    const { order, error } = await createOrder(user.id, items, normalizedAddress, paymentMethod);
 
     setLoading(false);
 
@@ -66,7 +110,6 @@ export default function CheckoutPage() {
       return;
     }
 
-    // Clear cart and redirect to order success
     clearCart();
     navigate(`/order-success/${order.order_id}`);
   };
@@ -100,7 +143,6 @@ export default function CheckoutPage() {
           <h1 className="font-display text-3xl font-bold mb-8">Checkout</h1>
 
           <div className="grid gap-8 md:grid-cols-2">
-            {/* Order Summary */}
             <div className="order-2 md:order-1">
               <div className="rounded-xl border border-border bg-card p-6">
                 <h2 className="font-display text-xl font-bold mb-4">Order Summary</h2>
@@ -129,10 +171,8 @@ export default function CheckoutPage() {
               </div>
             </div>
 
-            {/* Checkout Form */}
             <div className="order-1 md:order-2">
               <form onSubmit={handleSubmit} className="space-y-6">
-                {/* Shipping Address */}
                 <div className="rounded-xl border border-border bg-card p-6">
                   <h2 className="font-display text-xl font-bold mb-4">Shipping Information</h2>
                   <div className="space-y-4">
@@ -230,7 +270,6 @@ export default function CheckoutPage() {
                   </div>
                 </div>
 
-                {/* Payment Method */}
                 <div className="rounded-xl border border-border bg-card p-6">
                   <h2 className="font-display text-xl font-bold mb-4">Payment Method</h2>
                   <RadioGroup value={paymentMethod} onValueChange={(value) => setPaymentMethod(value as PaymentMethod)}>
@@ -267,12 +306,41 @@ export default function CheckoutPage() {
                   </RadioGroup>
                 </div>
 
+                <div className="rounded-xl border border-border bg-card p-6">
+                  <h2 className="font-display text-xl font-bold mb-4">Review Before Placing</h2>
+                  <div className="space-y-3 text-sm">
+                    <p>
+                      <span className="text-muted-foreground">Shipping to:</span>{" "}
+                      <span className="font-medium">
+                        {normalizedAddress.fullName || "Your full name"}
+                      </span>
+                    </p>
+                    <p className="text-muted-foreground">
+                      {normalizedAddress.addressLine1 || "Address line 1"}, {normalizedAddress.city || "City"},{" "}
+                      {normalizedAddress.state || "State"} {normalizedAddress.zipCode || "ZIP"}, {normalizedAddress.country || "Country"}
+                    </p>
+                    <p>
+                      <span className="text-muted-foreground">Payment:</span>{" "}
+                      <span className="font-medium">{paymentMethodLabel[paymentMethod]}</span>
+                    </p>
+                    <label className="flex items-start gap-2 cursor-pointer pt-2">
+                      <input
+                        type="checkbox"
+                        className="mt-0.5 h-4 w-4 rounded border-border text-accent focus:ring-accent"
+                        checked={reviewAccepted}
+                        onChange={(e) => setReviewAccepted(e.target.checked)}
+                      />
+                      <span className="text-muted-foreground">I confirm these order details are correct.</span>
+                    </label>
+                  </div>
+                </div>
+
                 <Button
                   type="submit"
                   className="w-full h-12 gradient-accent text-accent-foreground font-semibold shadow-accent-glow hover:opacity-90"
-                  disabled={loading}
+                  disabled={loading || !isAddressValid || !reviewAccepted}
                 >
-                  {loading ? "Placing Order..." : `Place Order — $${totalPrice.toFixed(2)}`}
+                  {loading ? "Placing Order..." : `Place Order - $${totalPrice.toFixed(2)}`}
                 </Button>
               </form>
             </div>

@@ -3,17 +3,121 @@ import { getProductById, getReviewsForProduct, products } from "@/lib/data";
 import { useCart } from "@/contexts/CartContext";
 import ProductCard from "@/components/ProductCard";
 import Footer from "@/components/Footer";
-import { Star, ShoppingBag, ArrowLeft, Check, Sparkles } from "lucide-react";
+import { Star, ShoppingBag, ArrowLeft, Check, Sparkles, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { getCatalogProductById, getCatalogProductsSync } from "@/lib/productCatalog";
+import { getStoredUser, getAuthToken } from "@/lib/auth";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+
+interface Review {
+  id: string;
+  userName: string;
+  rating: number;
+  comment: string;
+  date: string;
+}
 
 export default function ProductDetail() {
   const { id } = useParams<{ id: string }>();
-  const product = getProductById(id || "");
-  const reviews = getReviewsForProduct(id || "");
+  const catalogProducts = getCatalogProductsSync();
+  const product = getCatalogProductById(id || "") || getProductById(id || "");
   const { addToCart } = useCart();
   const [selectedImage, setSelectedImage] = useState(0);
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [user, setUser] = useState<any>(null);
+  const [showReviewForm, setShowReviewForm] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [reviewRating, setReviewRating] = useState(5);
+  const [reviewComment, setReviewComment] = useState("");
+  const [reviewError, setReviewError] = useState("");
+
+  useEffect(() => {
+    const storedUser = getStoredUser();
+    setUser(storedUser);
+    
+    // Fetch reviews from backend first, fallback to local
+    fetchReviews();
+  }, [id]);
+
+  const fetchReviews = async () => {
+    try {
+      const token = getAuthToken();
+      const response = await fetch(`${API_BASE_URL}/api/users/reviews?productId=${id}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (response.ok) {
+        const data = await response.json();
+        if (data.reviews && data.reviews.length > 0) {
+          const formatted = data.reviews.map((r: any) => ({
+            id: r._id,
+            userName: r.userId?.username || "Anonymous",
+            rating: r.rating,
+            comment: r.comment,
+            date: new Date(r.createdAt).toISOString().split("T")[0],
+          }));
+          setReviews(formatted);
+          return;
+        }
+      }
+    } catch (error) {
+      console.log("Using local reviews");
+    }
+    // Fallback to local reviews
+    setReviews(getReviewsForProduct(id || ""));
+  };
+
+  const handleSubmitReview = async () => {
+    if (!user) {
+      setReviewError("Please login to submit a review");
+      return;
+    }
+
+    setSubmitting(true);
+    setReviewError("");
+
+    try {
+      const token = getAuthToken();
+      const response = await fetch(`${API_BASE_URL}/api/users/reviews`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          productId: id,
+          rating: reviewRating,
+          comment: reviewComment,
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const newReview: Review = {
+          id: data.review._id,
+          userName: user.username || "You",
+          rating: data.review.rating,
+          comment: data.review.comment,
+          date: new Date().toISOString().split("T")[0],
+        };
+        setReviews([newReview, ...reviews]);
+        setShowReviewForm(false);
+        setReviewComment("");
+        setReviewRating(5);
+      } else {
+        const error = await response.json();
+        setReviewError(error.message || "Failed to submit review");
+      }
+    } catch (error) {
+      setReviewError("Failed to submit review. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   if (!product) {
     return (
@@ -28,7 +132,8 @@ export default function ProductDetail() {
     );
   }
 
-  const recommended = products
+  const sourceProducts = catalogProducts.length > 0 ? catalogProducts : products;
+  const recommended = sourceProducts
     .filter((p) => p.category === product.category && p.id !== product.id)
     .slice(0, 4);
 
@@ -55,8 +160,8 @@ export default function ProductDetail() {
                   <button
                     key={i}
                     onClick={() => setSelectedImage(i)}
-                    className={`h-16 w-16 overflow-hidden rounded-lg border-2 transition-all ${
-                      selectedImage === i ? "border-accent" : "border-border opacity-60 hover:opacity-100"
+                    className={`h-20 w-20 overflow-hidden rounded-lg border-2 ${
+                      selectedImage === i ? "border-accent" : "border-transparent"
                     }`}
                   >
                     <img src={img} alt="" className="h-full w-full object-cover" />
@@ -66,52 +171,54 @@ export default function ProductDetail() {
             )}
           </motion.div>
 
-          {/* Info */}
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.4, delay: 0.1 }}
-          >
+          {/* Details */}
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.1 }}>
             <p className="text-sm font-medium text-muted-foreground">{product.brand}</p>
-            <h1 className="mt-1 font-display text-2xl font-bold md:text-3xl">{product.name}</h1>
+            <h1 className="mt-1 font-display text-3xl font-bold">{product.name}</h1>
 
             <div className="mt-3 flex items-center gap-2">
-              <div className="flex items-center gap-1">
-                <Star className="h-4 w-4 fill-accent text-accent" />
-                <span className="text-sm font-semibold">{product.rating}</span>
+              <div className="flex gap-0.5">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <Star
+                    key={i}
+                    className={`h-5 w-5 ${i < Math.floor(product.rating) ? "fill-accent text-accent" : "text-border"}`}
+                  />
+                ))}
               </div>
-              <span className="text-sm text-muted-foreground">({product.reviewCount} reviews)</span>
+              <span className="text-sm font-medium">{product.rating}</span>
+              <span className="text-sm text-muted-foreground">({reviews.length} reviews)</span>
             </div>
 
             <div className="mt-4 flex items-baseline gap-3">
-              <span className="font-display text-3xl font-bold">${product.price}</span>
+              <span className="font-display text-3xl font-bold">₹{product.price}</span>
               {product.originalPrice && (
-                <span className="text-lg text-muted-foreground line-through">${product.originalPrice}</span>
-              )}
-              {product.originalPrice && (
-                <span className="rounded-lg bg-accent/10 px-2 py-0.5 text-sm font-bold text-accent">
-                  Save ${(product.originalPrice - product.price).toFixed(2)}
-                </span>
+                <>
+                  <span className="text-lg text-muted-foreground line-through">₹{product.originalPrice}</span>
+                  <span className="rounded-lg bg-accent px-2 py-1 text-sm font-bold text-accent-foreground">
+                    {Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)}% OFF
+                  </span>
+                </>
               )}
             </div>
 
-            <p className="mt-5 text-sm leading-relaxed text-muted-foreground">{product.description}</p>
+            <p className="mt-4 text-muted-foreground">{product.description}</p>
 
-            {/* Features */}
-            <div className="mt-5 space-y-2">
-              {product.features.map((feat) => (
-                <div key={feat} className="flex items-center gap-2 text-sm">
-                  <Check className="h-4 w-4 text-teal" />
-                  <span>{feat}</span>
-                </div>
-              ))}
-            </div>
+            {product.features && product.features.length > 0 && (
+              <ul className="mt-4 space-y-2">
+                {product.features.map((feature, i) => (
+                  <li key={i} className="flex items-center gap-2 text-sm">
+                    <Check className="h-4 w-4 text-accent" />
+                    {feature}
+                  </li>
+                ))}
+              </ul>
+            )}
 
-            <div className="mt-8 flex gap-3">
+            <div className="mt-6">
               <Button
                 onClick={() => addToCart(product)}
-                className="flex-1 gradient-accent text-accent-foreground font-semibold shadow-accent-glow hover:opacity-90"
                 size="lg"
+                className="w-full md:w-auto shadow-accent-glow hover:opacity-90"
               >
                 <ShoppingBag className="mr-2 h-5 w-5" />
                 Add to Cart
@@ -131,10 +238,88 @@ export default function ProductDetail() {
           </motion.div>
         </div>
 
-        {/* Reviews */}
-        {reviews.length > 0 && (
-          <section className="mt-16">
-            <h2 className="font-display text-xl font-bold">Customer Reviews</h2>
+        {/* Reviews Section */}
+        <section className="mt-16">
+          <div className="flex items-center justify-between">
+            <h2 className="font-display text-xl font-bold">Customer Reviews ({reviews.length})</h2>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => {
+                if (!user) {
+                  setReviewError("Please login to write a review");
+                  return;
+                }
+                setShowReviewForm(!showReviewForm);
+              }}
+            >
+              Write a Review
+            </Button>
+          </div>
+
+          {/* Review Form */}
+          {showReviewForm && (
+            <div className="mt-4 rounded-xl border border-border bg-card p-5">
+              <h3 className="font-semibold mb-4">Write Your Review</h3>
+              <div className="space-y-4">
+                <div>
+                  <Label>Rating</Label>
+                  <div className="flex gap-1 mt-1">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <button
+                        key={star}
+                        onClick={() => setReviewRating(star)}
+                        className="focus:outline-none"
+                      >
+                        <Star
+                          className={`h-6 w-6 transition-colors ${
+                            star <= reviewRating 
+                              ? "fill-accent text-accent" 
+                              : "text-border hover:text-accent/50"
+                          }`}
+                        />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <Label htmlFor="comment">Your Review</Label>
+                  <Textarea
+                    id="comment"
+                    value={reviewComment}
+                    onChange={(e) => setReviewComment(e.target.value)}
+                    placeholder="Share your experience with this product..."
+                    className="mt-1"
+                    rows={4}
+                  />
+                </div>
+                {reviewError && (
+                  <p className="text-sm text-red-500">{reviewError}</p>
+                )}
+                <div className="flex gap-2">
+                  <Button 
+                    onClick={handleSubmitReview} 
+                    disabled={submitting}
+                  >
+                    <Send className="mr-2 h-4 w-4" />
+                    {submitting ? "Submitting..." : "Submit Review"}
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    onClick={() => {
+                      setShowReviewForm(false);
+                      setReviewError("");
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Reviews List */}
+          {reviews.length > 0 ? (
             <div className="mt-6 space-y-4">
               {reviews.map((review) => (
                 <div key={review.id} className="rounded-xl border border-border bg-card p-5">
@@ -154,8 +339,12 @@ export default function ProductDetail() {
                 </div>
               ))}
             </div>
-          </section>
-        )}
+          ) : (
+            <div className="mt-6 text-center py-8">
+              <p className="text-muted-foreground">No reviews yet. Be the first to review this product!</p>
+            </div>
+          )}
+        </section>
 
         {/* Recommended */}
         {recommended.length > 0 && (

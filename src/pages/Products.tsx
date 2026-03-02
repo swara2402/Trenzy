@@ -1,9 +1,12 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { products, categories } from "@/lib/data";
+import type { Product } from "@/lib/data";
 import ProductCard from "@/components/ProductCard";
 import Footer from "@/components/Footer";
 import { SlidersHorizontal, X } from "lucide-react";
+import { fetchProducts } from "@/lib/api";
+import { getCatalogProductsSync, hasCatalogSnapshot } from "@/lib/productCatalog";
 
 type SortOption = "popular" | "price-low" | "price-high" | "rating";
 
@@ -15,9 +18,39 @@ export default function Products() {
   const [sort, setSort] = useState<SortOption>("popular");
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 300]);
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [allProducts, setAllProducts] = useState<Product[]>(getCatalogProductsSync());
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const localProducts = getCatalogProductsSync();
+    setAllProducts(localProducts);
+
+    if (hasCatalogSnapshot()) {
+      setIsLoading(false);
+      return;
+    }
+
+    const load = async () => {
+      try {
+        const dbProducts = await fetchProducts({ limit: 200 });
+        if (dbProducts.length > 0) {
+          setAllProducts(dbProducts);
+        } else {
+          setAllProducts(products);
+        }
+      } catch (error) {
+        console.warn("Using local products fallback:", error);
+        setAllProducts(products);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    void load();
+  }, []);
 
   const filtered = useMemo(() => {
-    let result = [...products];
+    let result = [...allProducts];
 
     if (categoryFilter) {
       result = result.filter((p) => p.category === categoryFilter);
@@ -51,7 +84,7 @@ export default function Products() {
     }
 
     return result;
-  }, [categoryFilter, searchQuery, sort, priceRange]);
+  }, [categoryFilter, searchQuery, sort, priceRange, allProducts]);
 
   const clearFilters = () => {
     setSearchParams({});
@@ -191,7 +224,11 @@ export default function Products() {
               </div>
             )}
 
-            {filtered.length === 0 ? (
+            {isLoading ? (
+              <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
+                <p className="text-lg font-medium">Loading products...</p>
+              </div>
+            ) : filtered.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
                 <p className="text-lg font-medium">No products found</p>
                 <p className="mt-1 text-sm">Try adjusting your filters</p>

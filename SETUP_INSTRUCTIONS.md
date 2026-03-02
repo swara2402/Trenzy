@@ -18,41 +18,32 @@
 ### 3. Order Management System
 - ✅ Order creation with unique order IDs
 - ✅ Order storage functions (`createOrder`, `getUserOrders`, `getOrderById`, `cancelOrder`)
-- ✅ Orders page displays real orders from database
+- ✅ Orders page displays orders
 - ✅ Order cancellation functionality
 - ✅ Order success page with order details
 
-## 🔧 Database Setup Required
+## 🗄️ Database Setup
 
-### Step 1: Create Orders Table in Supabase
+This project uses **MongoDB** for data storage. The backend connects to MongoDB using the `MONGODB_URI` environment variable.
 
-1. Go to your Supabase dashboard
-2. Navigate to **SQL Editor**
-3. Copy and paste the contents of `supabase_schema.sql`
-4. Click **Run** to execute the SQL
+### Environment Variables Required
 
-This will create:
-- `orders` table with all necessary fields
-- Indexes for performance
-- Row Level Security (RLS) policies
-- Automatic timestamp updates
+Create a `.env` file in the `backend` directory with:
 
-### Step 2: Verify Table Creation
+```
+MONGODB_URI=your_mongodb_connection_string
+JWT_SECRET=your_jwt_secret_key
+PORT=5000
+CLIENT_ORIGIN=http://localhost:8080
+```
 
-After running the SQL:
-1. Go to **Table Editor** in Supabase
-2. You should see the `orders` table
-3. Verify the columns match:
-   - `id` (UUID, primary key)
-   - `user_id` (UUID, foreign key)
-   - `order_id` (TEXT, unique)
-   - `items` (JSONB)
-   - `total_price` (DECIMAL)
-   - `address` (JSONB)
-   - `payment_method` (TEXT)
-   - `status` (TEXT)
-   - `created_at` (TIMESTAMP)
-   - `updated_at` (TIMESTAMP)
+### MongoDB Collections
+
+The backend automatically creates the following collections:
+- `users` - User accounts and authentication
+- `products` - Product catalog
+
+Orders are stored locally in the browser's localStorage for simplicity.
 
 ## 🚀 How It Works
 
@@ -61,7 +52,7 @@ After running the SQL:
 2. Clicks "Checkout" → Redirected to `/checkout` (protected)
 3. If not logged in → Redirected to `/login` → After login → Back to `/checkout`
 4. User fills address form and selects payment method
-5. Clicks "Place Order" → Order saved to database
+5. Clicks "Place Order" → Order saved to localStorage
 6. Cart cleared → Redirected to `/order-success/:orderId`
 
 ### Order Management
@@ -78,19 +69,18 @@ After running the SQL:
 
 ## 📝 Notes
 
-- Orders are stored with user_id, so each user only sees their own orders
-- Row Level Security ensures data privacy
+- Orders are stored locally in the browser
 - Order IDs are generated as: `ORD-{timestamp}-{random}`
 - Order status can be: `pending`, `processing`, `shipped`, `delivered`, `cancelled`
 
 ## 🐛 Troubleshooting
 
 If orders aren't saving:
-1. Check Supabase console for errors
-2. Verify the `orders` table exists
-3. Verify RLS policies are enabled
-4. Check browser console for errors
-5. Ensure user is authenticated
+1. Check browser console for errors
+2. Verify localStorage is enabled
+3. Ensure user is authenticated
 
-If you see "relation does not exist" error:
-- Run the SQL schema file in Supabase SQL Editor
+For backend issues:
+1. Check MongoDB connection
+2. Verify JWT_SECRET is set
+3. Check backend console for errors

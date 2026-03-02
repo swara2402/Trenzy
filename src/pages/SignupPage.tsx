@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useNavigate, Link } from "react-router-dom";
-import { supabase } from "@/lib/supabaseClient";
+import { signup } from "@/lib/auth";
 import { Sparkles, User, Mail, Lock, ArrowRight } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -20,24 +20,13 @@ const SignupPage = () => {
     setError(null);
     setLoading(true);
 
-    const { data, error: signUpError } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: { username },
-        emailRedirectTo: `${window.location.origin}/login`,
-      },
-    });
-
-    setLoading(false);
-
-    if (signUpError) {
-      setError(signUpError.message);
-      return;
-    }
-
-    if (data.user) {
+    try {
+      await signup(username, email, password);
       navigate("/login");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Signup failed");
+    } finally {
+      setLoading(false);
     }
   };
 

@@ -13,6 +13,7 @@ export interface Product {
   description: string;
   features: string[];
   inStock: boolean;
+  stock?: number;
   popularity: number;
 }
 

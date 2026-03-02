@@ -1,11 +1,11 @@
 import { Link, useNavigate } from "react-router-dom";
-import { Search, ShoppingBag, User, Sparkles, Menu, X, LogOut, Settings } from "lucide-react";
+import { Search, ShoppingBag, User, Sparkles, Menu, X, LogOut, Settings, Shield, Heart } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
+import { useWishlist } from "@/contexts/WishlistContext";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { supabase } from "@/lib/supabaseClient";
-import type { User } from "@supabase/supabase-js";
+import { getStoredUser, logout, isAdminUser, type AuthUser } from "@/lib/auth";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,34 +17,22 @@ import {
 
 const Navbar = () => {
   const { totalItems, setIsOpen } = useCart();
+  const { wishlist } = useWishlist();
   const [searchOpen, setSearchOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<AuthUser | null>(null);
   const navigate = useNavigate();
 
-  const displayName =
-    user?.user_metadata?.username ||
-    (user?.email ? user.email.split("@")[0] : "");
-
   useEffect(() => {
-    // Check initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-    });
-
-    // Listen for auth changes
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-    });
-
-    return () => subscription.unsubscribe();
+    // Check initial user
+    const storedUser = getStoredUser();
+    setUser(storedUser);
   }, []);
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
+    await logout();
+    setUser(null);
     navigate("/");
   };
 
@@ -56,6 +44,9 @@ const Navbar = () => {
       setSearchQuery("");
     }
   };
+
+  const displayName = user?.username || (user?.email ? user.email.split("@")[0] : "");
+  const isAdmin = isAdminUser(user);
 
   return (
     <nav className="sticky top-0 z-50 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -154,6 +145,20 @@ const Navbar = () => {
                       Orders
                     </Link>
                   </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link to="/wishlist" className="cursor-pointer">
+                      <Heart className="mr-2 h-4 w-4" />
+                      Wishlist
+                    </Link>
+                  </DropdownMenuItem>
+                  {isAdmin && (
+                    <DropdownMenuItem asChild>
+                      <Link to="/admin" className="cursor-pointer">
+                        <Shield className="mr-2 h-4 w-4" />
+                        Admin Panel
+                      </Link>
+                    </DropdownMenuItem>
+                  )}
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-destructive">
                     <LogOut className="mr-2 h-4 w-4" />
@@ -163,12 +168,29 @@ const Navbar = () => {
               </DropdownMenu>
             </>
           ) : (
-            <button
+            <Link
+              to="/login"
               className="hidden rounded-lg p-2 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground md:flex"
               title="User account"
             >
               <User className="h-5 w-5" />
-            </button>
+            </Link>
+          )}
+
+          {/* Wishlist */}
+          {user && (
+            <Link
+              to="/wishlist"
+              className="relative rounded-lg p-2 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+              title="Wishlist"
+            >
+              <Heart className="h-5 w-5" />
+              {wishlist.length > 0 && (
+                <span className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-accent text-[10px] font-bold text-accent-foreground">
+                  {wishlist.length}
+                </span>
+              )}
+            </Link>
           )}
 
           {/* Cart */}
@@ -262,6 +284,14 @@ const Navbar = () => {
                 {user ? (
                   <>
                     <div className="px-2 py-1 text-xs text-muted-foreground">{user.email}</div>
+                    {isAdmin && (
+                      <Link to="/admin" onClick={() => setMobileMenuOpen(false)} className="block">
+                        <Button variant="outline" className="w-full flex items-center justify-center gap-2">
+                          <Shield className="h-4 w-4" />
+                          Admin Panel
+                        </Button>
+                      </Link>
+                    )}
                     <Button
                       variant="outline"
                       onClick={() => {

@@ -2,47 +2,43 @@ import { Link } from "react-router-dom";
 import { ArrowLeft, Package, ShoppingBag, Calendar, MapPin, CreditCard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Footer from "@/components/Footer";
-import { supabase } from "@/lib/supabaseClient";
-import { getUserOrders, cancelOrder, type Order } from "@/lib/orders";
+import { getUserOrders as fetchUserOrders, cancelOrder, paymentMethodLabel, type Order, type OrderItem } from "@/lib/orders";
+import { getStoredUser, getCurrentUser, type AuthUser } from "@/lib/auth";
 import { useEffect, useState } from "react";
-import type { User } from "@supabase/supabase-js";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 
 export default function OrdersPage() {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<AuthUser | null>(null);
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+  const [cancellingOrderId, setCancellingOrderId] = useState<string | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        loadOrders(session.user.id);
+    const loadInitialData = async () => {
+      const storedUser = getStoredUser();
+      if (storedUser) {
+        setUser(storedUser);
+        await loadOrders(storedUser.id);
       } else {
-        setLoading(false);
+        // Try to fetch fresh user data
+        const freshUser = await getCurrentUser();
+        if (freshUser) {
+          setUser(freshUser);
+          await loadOrders(freshUser.id);
+        } else {
+          setLoading(false);
+        }
       }
-    });
+    };
 
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        loadOrders(session.user.id);
-      } else {
-        setOrders([]);
-        setLoading(false);
-      }
-    });
-
-    return () => subscription.unsubscribe();
+    loadInitialData();
   }, []);
 
   const loadOrders = async (userId: string) => {
     setLoading(true);
-    const { orders, error } = await getUserOrders(userId);
+    const { orders, error } = await fetchUserOrders(userId);
     if (error) {
       toast({
         title: "Error",
@@ -56,7 +52,12 @@ export default function OrdersPage() {
   };
 
   const handleCancelOrder = async (orderId: string) => {
+    const shouldCancel = window.confirm("Cancel this order?");
+    if (!shouldCancel) return;
+
+    setCancellingOrderId(orderId);
     const { success, error } = await cancelOrder(orderId);
+    setCancellingOrderId(null);
     if (success) {
       toast({
         title: "Order cancelled",
@@ -143,7 +144,7 @@ export default function OrdersPage() {
                         </div>
                         <div className="flex items-center gap-1">
                           <CreditCard className="h-4 w-4" />
-                          {order.payment_method.toUpperCase()}
+                          {paymentMethodLabel[order.payment_method]}
                         </div>
                       </div>
                     </div>
@@ -161,16 +162,20 @@ export default function OrdersPage() {
                           variant="outline"
                           size="sm"
                           onClick={() => handleCancelOrder(order.order_id)}
+                          disabled={cancellingOrderId === order.order_id}
                         >
-                          Cancel
+                          {cancellingOrderId === order.order_id ? "Cancelling..." : "Cancel"}
                         </Button>
                       )}
+                      <Link to={`/orders/${order.order_id}`}>
+                        <Button variant="outline" size="sm">Details</Button>
+                      </Link>
                     </div>
                   </div>
 
                   <div className="space-y-3 mb-4">
-                    {order.items.map((item: any, index: number) => (
-                      <div key={index} className="flex gap-4 p-3 rounded-lg bg-muted/50">
+                    {order.items.map((item: OrderItem) => (
+                      <div key={`${order.order_id}-${item.product_id}`} className="flex gap-4 p-3 rounded-lg bg-muted/50">
                         <img
                           src={item.product_image}
                           alt={item.product_name}
