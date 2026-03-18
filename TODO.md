@@ -1,43 +1,27 @@
-# Phase 2 Implementation TODO
+# AI Upgrade TODO Implementation Steps (Approved Plan)
 
-## Backend Changes
+## 1. Backend Setup (Phase 1) ✅ Started
+- [ ] Create backend/.env with keys
+- [ ] Install deps if needed  
+- [ ] Test backend server
 
-### 1. Review Model
-- [ ] Create backend/src/models/Review.js
+## 2. Integrate AIChatbot with Backend (Phase 3)
+- [ ] Edit AIChatbot.tsx to call /api/chat with context
+- [ ] Test chat LLM + product tags
 
-### 2. User Model Updates
-- [ ] Add addresses array to User model
-- [ ] Add wishlist array to User model
+## 3. Fix Demand Prediction (Phase 4)
+- [ ] Update aiController.js for /api/ai/demand aggregation
+- [ ] Update VendorDashboard.tsx data sending
+- [ ] Test forecast
 
-### 3. Cart Persistence
-- [ ] Add cart field to User model
-- [ ] Create userRoutes.js with cart endpoints
+## 4. Add Phase 5 Missing Features
+- [ ] Create dynamicPricingService.js + route/UI
+- [ ] Create visualSearchService.js + ProductDetail UI
+- [ ] Create fraudService.js + Checkout UI
 
-### 4. Address Management
-- [ ] Add address CRUD routes
+## 5. Testing & Update TODOs
+- [ ] End-to-end tests
+- [ ] Mark AI_UPGRADE_TODO.md complete [x]
+- [ ] attempt_completion
 
-### 5. Profile Update
-- [ ] Add update profile route
-
-## Frontend Changes
-
-### 1. Reviews & Ratings
-- [ ] Add review submission form to ProductDetail
-- [ ] Show rating input
-- [ ] Display submitted reviews
-
-### 2. Cart Persistence
-- [ ] Sync cart with backend on login
-- [ ] Save cart to backend when logged in
-
-### 3. Edit Profile
-- [ ] Enable profile editing in ProfilePage
-
-### 4. Wishlist
-- [ ] Create WishlistContext
-- [ ] Add wishlist button to ProductCard
-- [ ] Create wishlist page
-
-### 5. Saved Addresses
-- [ ] Create address management in profile
-- [ ] Add/Edit/Delete addresses
+**Legend:** Use edit_file on this TODO.md after each step completion.

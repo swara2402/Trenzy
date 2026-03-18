@@ -64,24 +64,24 @@ export default function OrderSuccessPage() {
             <motion.div
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
-              transition={{ type: "spring", duration: 0.5 }}
-              className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-accent/10 mb-4"
+              transition={{ type: "spring", stiffness: 200, damping: 15 }}
+              className="inline-flex items-center justify-center w-24 h-24 rounded-full bg-accent/10 mb-6 shadow-accent-glow"
             >
-              <CheckCircle className="h-10 w-10 text-accent" />
+              <CheckCircle className="h-12 w-12 text-accent" />
             </motion.div>
-            <h1 className="font-display text-4xl font-bold mb-2">Order Placed Successfully!</h1>
-            <p className="text-muted-foreground">Your order has been confirmed and will be processed soon</p>
+            <h1 className="font-display text-5xl font-extrabold mb-4 tracking-tight">Order Placed Successfully!</h1>
+            <p className="text-lg text-muted-foreground">Your order has been confirmed and will be processed soon.</p>
           </div>
 
-          <div className="rounded-xl border border-border bg-card p-6 mb-6">
-            <div className="space-y-4">
-              <div className="flex justify-between items-center pb-4 border-b border-border">
-                <span className="text-sm text-muted-foreground">Order ID</span>
-                <span className="font-mono font-semibold">{order.order_id}</span>
+          <div className="rounded-3xl glassmorphism-card shadow-elevated p-8 mb-6">
+            <div className="space-y-6">
+              <div className="flex justify-between items-center pb-5 border-b border-border/50">
+                <span className="text-sm font-medium text-muted-foreground">Order ID</span>
+                <span className="font-mono text-lg font-bold">{order.order_id}</span>
               </div>
-              <div className="flex justify-between items-center pb-4 border-b border-border">
-                <span className="text-sm text-muted-foreground">Total Amount</span>
-                <span className="font-display text-2xl font-bold">${order.total_price.toFixed(2)}</span>
+              <div className="flex justify-between items-center pb-5 border-b border-border/50">
+                <span className="text-sm font-medium text-muted-foreground">Total Amount</span>
+                <span className="font-display text-3xl font-black">₹{order.total_price.toFixed(2)}</span>
               </div>
               <div className="flex justify-between items-center pb-4 border-b border-border">
                 <span className="text-sm text-muted-foreground">Payment Method</span>
@@ -96,8 +96,8 @@ export default function OrderSuccessPage() {
             </div>
           </div>
 
-          <div className="rounded-xl border border-border bg-card p-6 mb-6">
-            <h2 className="font-display text-xl font-bold mb-4">Shipping Address</h2>
+          <div className="rounded-3xl glassmorphism-card shadow-elevated p-8 mb-8">
+            <h2 className="font-display text-2xl font-bold mb-5">Shipping Address</h2>
             <div className="space-y-1 text-sm">
               <p className="font-medium">{order.address.fullName}</p>
               <p className="text-muted-foreground">{order.address.addressLine1}</p>
@@ -112,15 +112,15 @@ export default function OrderSuccessPage() {
             </div>
           </div>
 
-          <div className="flex gap-3">
+          <div className="flex flex-col sm:flex-row gap-4 mt-8">
             <Link to="/orders" className="flex-1">
-              <Button variant="outline" className="w-full">
+              <Button variant="outline" className="w-full h-14 rounded-xl text-base font-semibold border-border/50 bg-secondary/30 backdrop-blur-sm hover:bg-secondary/50">
                 View All Orders
               </Button>
             </Link>
             <Link to="/products" className="flex-1">
-              <Button className="w-full gradient-accent text-accent-foreground font-semibold shadow-accent-glow hover:opacity-90">
-                Continue Shopping <ArrowRight className="ml-2 h-4 w-4" />
+              <Button className="w-full h-14 rounded-xl gradient-accent text-white font-bold text-base shadow-accent-glow hover:scale-[1.02] transition-transform duration-300 border-0">
+                Continue Shopping <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
             </Link>
           </div>

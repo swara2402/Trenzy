@@ -1,5 +1,5 @@
 import type { CartItem } from "@/contexts/CartContext";
-import { getStoredUser } from "./auth";
+import { getAuthToken, getStoredUser } from "./auth";
 
 export interface Address {
   fullName: string;
@@ -43,6 +43,7 @@ export const paymentMethodLabel: Record<PaymentMethod, string> = {
 };
 
 const ORDERS_KEY = "smartcart_orders";
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5001";
 
 function getOrdersFromStorage(): Order[] {
   try {
@@ -103,6 +104,23 @@ export async function createOrder(
     orders.unshift(orderData);
     saveOrdersToStorage(orders);
 
+    const token = getAuthToken();
+    if (token) {
+      const purchasedProductIds = Array.from(new Set(items.map((item) => item.product.id)));
+      if (purchasedProductIds.length > 0) {
+        await fetch(`${API_BASE_URL}/api/users/purchases`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ productIds: purchasedProductIds }),
+        }).catch(() => {
+          // Keep checkout resilient if analytics tracking fails.
+        });
+      }
+    }
+
     return { order: orderData, error: null };
   } catch (err) {
     return { order: null, error: err as Error };
@@ -158,16 +176,32 @@ export async function getOrderById(orderId: string): Promise<{ order: Order | nu
 
 export async function cancelOrder(orderId: string): Promise<{ success: boolean; error: Error | null }> {
   try {
-    const orders = getOrdersFromStorage();
-    const orderIndex = orders.findIndex(o => o.order_id === orderId);
-    
-    if (orderIndex === -1) {
-      return { success: false, error: new Error("Order not found") };
+    const token = getAuthToken();
+    if (!token) {
+      return { success: false, error: new Error("User not authenticated") };
     }
 
-    orders[orderIndex].status = "cancelled";
-    orders[orderIndex].updated_at = new Date().toISOString();
-    saveOrdersToStorage(orders);
+    const response = await fetch(`${API_BASE_URL}/api/orders/${orderId}`, {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ message: "Failed to cancel order" }));
+      return { success: false, error: new Error(errorData.message || "Failed to cancel order") };
+    }
+
+    // Also update local storage for backward compatibility with UI assuming local orders
+    const orders = getOrdersFromStorage();
+    const orderIndex = orders.findIndex(o => o.order_id === orderId || o.id === orderId);
+    
+    if (orderIndex !== -1) {
+      orders[orderIndex].status = "cancelled";
+      orders[orderIndex].updated_at = new Date().toISOString();
+      saveOrdersToStorage(orders);
+    }
 
     return { success: true, error: null };
   } catch (err) {

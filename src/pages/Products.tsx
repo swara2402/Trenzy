@@ -14,14 +14,17 @@ export default function Products() {
   const [searchParams, setSearchParams] = useSearchParams();
   const categoryFilter = searchParams.get("category") || "";
   const searchQuery = searchParams.get("search") || "";
+  const colorFilter = searchParams.get("color") || "";
+  const maxPriceFilter = searchParams.get("maxPrice") ? Number(searchParams.get("maxPrice")) : undefined;
 
   const [sort, setSort] = useState<SortOption>("popular");
-  const [priceRange, setPriceRange] = useState<[number, number]>([0, 300]);
+  const [priceRange, setPriceRange] = useState<[number, number]>([0, maxPriceFilter || 300]);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [allProducts, setAllProducts] = useState<Product[]>(getCatalogProductsSync());
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    // Refetch when URL params change
     const localProducts = getCatalogProductsSync();
     setAllProducts(localProducts);
 
@@ -31,8 +34,16 @@ export default function Products() {
     }
 
     const load = async () => {
+      setIsLoading(true);
       try {
-        const dbProducts = await fetchProducts({ limit: 200 });
+        const fetchParams: any = { 
+          limit: 200,
+          category: categoryFilter || undefined,
+          search: searchQuery || undefined,
+          color: colorFilter || undefined,
+          maxPrice: maxPriceFilter || undefined
+        };
+        const dbProducts = await fetchProducts(fetchParams);
         if (dbProducts.length > 0) {
           setAllProducts(dbProducts);
         } else {
@@ -47,16 +58,16 @@ export default function Products() {
     };
 
     void load();
-  }, []);
+  }, [categoryFilter, searchQuery, colorFilter, maxPriceFilter]);
 
   const filtered = useMemo(() => {
+    // Since server now filters category/search/color/maxPrice, minimal client filter
     let result = [...allProducts];
 
-    if (categoryFilter) {
-      result = result.filter((p) => p.category === categoryFilter);
-    }
+    result = result.filter((p) => p.price <= priceRange[1]); // Client price range (min already server? but keep max for UI)
 
-    if (searchQuery) {
+    // Keep search client-fuzzy for local products fallback
+    if (searchQuery && !categoryFilter && !colorFilter) {
       const q = searchQuery.toLowerCase();
       result = result.filter(
         (p) =>
@@ -65,8 +76,6 @@ export default function Products() {
           p.tags.some((t) => t.includes(q))
       );
     }
-
-    result = result.filter((p) => p.price >= priceRange[0] && p.price <= priceRange[1]);
 
     switch (sort) {
       case "popular":
@@ -168,6 +177,34 @@ export default function Products() {
                 </div>
               </div>
 
+              {/* Colors */}
+              <div className="mt-5">
+                <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Color</h4>
+                <div className="mt-2 space-y-1">
+                  {(['red', 'blue', 'black', 'white', 'green', 'yellow', 'pink', 'purple', 'orange', 'gray', 'silver', 'gold', 'brown'] as const).map((color) => (
+                    <button
+                      key={color}
+                      onClick={() => {
+                        const params: Record<string, string> = {};
+                        if (categoryFilter) params.category = categoryFilter;
+                        if (searchQuery) params.search = searchQuery;
+                        if (colorFilter === color) {
+                          delete params.color;
+                        } else {
+                          params.color = color;
+                        }
+                        setSearchParams(params);
+                      }}
+                      className={`block w-full rounded-lg px-3 py-1.5 text-left text-sm transition-colors ${
+                        colorFilter === color ? "bg-accent/10 font-medium text-accent" : "text-muted-foreground hover:bg-secondary"
+                      }`}
+                    >
+                      {color.charAt(0).toUpperCase() + color.slice(1)}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               {/* Price */}
               <div className="mt-5">
                 <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Price Range</h4>
@@ -195,7 +232,7 @@ export default function Products() {
           {/* Product Grid */}
           <div className="flex-1">
             {/* Active filters */}
-            {(categoryFilter || searchQuery) && (
+            {(categoryFilter || searchQuery || colorFilter) && (
               <div className="mb-4 flex flex-wrap gap-2">
                 {categoryFilter && (
                   <span className="inline-flex items-center gap-1 rounded-full bg-accent/10 px-3 py-1 text-xs font-medium text-accent">
@@ -203,6 +240,20 @@ export default function Products() {
                     <button onClick={() => {
                       const params: Record<string, string> = {};
                       if (searchQuery) params.search = searchQuery;
+                      if (colorFilter) params.color = colorFilter;
+                      setSearchParams(params);
+                    }}>
+                      <X className="h-3 w-3" />
+                    </button>
+                  </span>
+                )}
+                {colorFilter && (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-accent/10 px-3 py-1 text-xs font-medium text-accent">
+                    {colorFilter}
+                    <button onClick={() => {
+                      const params: Record<string, string> = {};
+                      if (searchQuery) params.search = searchQuery;
+                      if (categoryFilter) params.category = categoryFilter;
                       setSearchParams(params);
                     }}>
                       <X className="h-3 w-3" />
@@ -215,6 +266,7 @@ export default function Products() {
                     <button onClick={() => {
                       const params: Record<string, string> = {};
                       if (categoryFilter) params.category = categoryFilter;
+                      if (colorFilter) params.color = colorFilter;
                       setSearchParams(params);
                     }}>
                       <X className="h-3 w-3" />

@@ -35,6 +35,9 @@ MONGODB_URI=your_mongodb_connection_string
 JWT_SECRET=your_jwt_secret_key
 PORT=5000
 CLIENT_ORIGIN=http://localhost:8080
+CLIENT_ORIGINS=http://localhost:5173,http://localhost:8081,http://localhost:8082
+TRUST_PROXY=false
+ENFORCE_HTTPS=false
 ```
 
 ### MongoDB Collections

@@ -11,8 +11,14 @@ import { getCatalogProductById, getCatalogProductsSync } from "@/lib/productCata
 import { getStoredUser, getAuthToken } from "@/lib/auth";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { trackBrowsingHistory } from "@/lib/recommendations";
+import PeopleAlsoBought from "@/components/PeopleAlsoBought";
+import PriceTrend from "@/components/PriceTrend";
+import AskFriendsButton from "@/components/AskFriendsButton";
+import SuggestionFeedback from "@/components/SuggestionFeedback";
+import { useSuggestions } from "@/contexts/SuggestionContext";
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5001";
 
 interface Review {
   id: string;
@@ -42,6 +48,13 @@ export default function ProductDetail() {
     
     // Fetch reviews from backend first, fallback to local
     fetchReviews();
+
+    const token = getAuthToken();
+    if (token && id) {
+      trackBrowsingHistory(id).catch(() => {
+        // Ignore analytics tracking failures so product page remains usable.
+      });
+    }
   }, [id]);
 
   const fetchReviews = async () => {
@@ -146,12 +159,12 @@ export default function ProductDetail() {
 
         <div className="mt-6 grid gap-8 md:grid-cols-2">
           {/* Images */}
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4 }}>
-            <div className="overflow-hidden rounded-2xl border border-border">
+          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }} className="space-y-4">
+            <div className="overflow-hidden rounded-3xl glassmorphism-card shadow-elevated p-2">
               <img
                 src={product.images[selectedImage]}
                 alt={product.name}
-                className="aspect-square w-full object-cover"
+                className="aspect-square w-full rounded-2xl object-cover bg-secondary/30"
               />
             </div>
             {product.images.length > 1 && (
@@ -172,9 +185,9 @@ export default function ProductDetail() {
           </motion.div>
 
           {/* Details */}
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.1 }}>
-            <p className="text-sm font-medium text-muted-foreground">{product.brand}</p>
-            <h1 className="mt-1 font-display text-3xl font-bold">{product.name}</h1>
+          <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5, delay: 0.1, ease: [0.16, 1, 0.3, 1] }} className="flex flex-col justify-center">
+            <p className="text-sm font-semibold tracking-wider text-accent uppercase">{product.brand}</p>
+            <h1 className="mt-2 font-display text-4xl font-extrabold tracking-tight md:text-5xl">{product.name}</h1>
 
             <div className="mt-3 flex items-center gap-2">
               <div className="flex gap-0.5">
@@ -189,19 +202,19 @@ export default function ProductDetail() {
               <span className="text-sm text-muted-foreground">({reviews.length} reviews)</span>
             </div>
 
-            <div className="mt-4 flex items-baseline gap-3">
-              <span className="font-display text-3xl font-bold">₹{product.price}</span>
+            <div className="mt-6 flex items-baseline gap-4">
+              <span className="font-display text-4xl font-black tracking-tight text-foreground">₹{product.price}</span>
               {product.originalPrice && (
                 <>
-                  <span className="text-lg text-muted-foreground line-through">₹{product.originalPrice}</span>
-                  <span className="rounded-lg bg-accent px-2 py-1 text-sm font-bold text-accent-foreground">
+                  <span className="text-xl font-medium text-muted-foreground line-through decoration-muted-foreground/40">₹{product.originalPrice}</span>
+                  <span className="rounded-full bg-accent/10 px-3 py-1 text-sm font-bold text-accent">
                     {Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)}% OFF
                   </span>
                 </>
               )}
             </div>
 
-            <p className="mt-4 text-muted-foreground">{product.description}</p>
+            <p className="mt-6 text-base leading-relaxed text-muted-foreground">{product.description}</p>
 
             {product.features && product.features.length > 0 && (
               <ul className="mt-4 space-y-2">
@@ -214,25 +227,34 @@ export default function ProductDetail() {
               </ul>
             )}
 
-            <div className="mt-6">
+            <div className="mt-8 flex flex-col sm:flex-row gap-4">
               <Button
                 onClick={() => addToCart(product)}
                 size="lg"
-                className="w-full md:w-auto shadow-accent-glow hover:opacity-90"
+                className="flex-1 h-14 rounded-xl gradient-accent shadow-accent-glow hover:scale-[1.02] transition-all text-base font-semibold"
               >
                 <ShoppingBag className="mr-2 h-5 w-5" />
                 Add to Cart
               </Button>
             </div>
 
+            {/* Ask Friends Button */}
+            <div className="mt-6">
+              <AskFriendsButton productId={product.id} />
+            </div>
+
+            {/* Suggestion Feedback */}
+            <SuggestionFeedback suggestionId={`feedback-${product.id}`} productId={product.id} />
+
             {/* AI recommendation hint */}
-            <div className="mt-6 rounded-xl border border-accent/20 bg-accent/5 p-4">
-              <div className="flex items-center gap-2">
-                <Sparkles className="h-4 w-4 text-accent" />
-                <span className="text-sm font-semibold text-accent">AI Pick</span>
+            <div className="mt-8 relative overflow-hidden rounded-2xl border border-accent/20 bg-background/50 p-5 glassmorphism shadow-sm">
+              <div className="absolute top-0 left-0 w-1 h-full bg-accent"></div>
+              <div className="flex items-center gap-2 mb-2">
+                <Sparkles className="h-5 w-5 text-accent animate-pulse" />
+                <span className="text-sm font-bold text-foreground">AI Top Pick</span>
               </div>
-              <p className="mt-1 text-xs text-muted-foreground">
-                This product matches your browsing preferences. People who viewed this also loved similar items in {product.category}.
+              <p className="text-sm leading-relaxed text-muted-foreground">
+                This product perfectly matches your browsing preferences. People who viewed this also loved similar items in high-quality {product.category}.
               </p>
             </div>
           </motion.div>
@@ -347,6 +369,10 @@ export default function ProductDetail() {
         </section>
 
         {/* Recommended */}
+        {product && <PriceTrend productId={product.id} />}
+
+        {product && <PeopleAlsoBought productId={product.id} />}
+
         {recommended.length > 0 && (
           <section className="mt-16">
             <h2 className="font-display text-xl font-bold">You Might Also Like</h2>

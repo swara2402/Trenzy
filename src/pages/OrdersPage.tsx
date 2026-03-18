@@ -111,26 +111,28 @@ export default function OrdersPage() {
           <ArrowLeft className="h-4 w-4" /> Back to home
         </Link>
 
-        <div className="max-w-4xl mx-auto">
-          <h1 className="font-display text-3xl font-bold mb-8">My Orders</h1>
+        <div className="max-w-5xl mx-auto">
+          <h1 className="font-display text-4xl font-extrabold mb-8 tracking-tight">My Orders</h1>
 
           {orders.length === 0 ? (
-            <div className="rounded-xl border border-border bg-card p-6">
-              <div className="flex flex-col items-center justify-center py-12">
-                <ShoppingBag className="h-16 w-16 text-muted-foreground mb-4" />
-                <h2 className="text-xl font-semibold mb-2">No orders yet</h2>
-                <p className="text-sm text-muted-foreground mb-6 text-center max-w-md">
-                  Order history will be displayed here once you place your first order.
+            <div className="rounded-3xl glassmorphism-card shadow-elevated p-10">
+              <div className="flex flex-col items-center justify-center py-16">
+                <ShoppingBag className="h-20 w-20 text-muted-foreground/50 mb-6" />
+                <h2 className="text-2xl font-bold mb-3 font-display">No orders yet</h2>
+                <p className="text-base text-muted-foreground mb-8 text-center max-w-md">
+                  Order history will be displayed here once you place your first order. Discover what we have for you.
                 </p>
                 <Link to="/products">
-                  <Button>Start Shopping</Button>
+                  <Button size="lg" className="rounded-xl gradient-accent text-white shadow-accent-glow hover:scale-105 transition-transform border-0">
+                    Start Shopping
+                  </Button>
                 </Link>
               </div>
             </div>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-6">
               {orders.map((order) => (
-                <div key={order.id} className="rounded-xl border border-border bg-card p-6">
+                <div key={order.id} className="rounded-2xl glassmorphism-card shadow-sm hover:shadow-md transition-shadow p-6 md:p-8 relative overflow-hidden">
                   <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-4">
                     <div>
                       <div className="flex items-center gap-2 mb-2">
@@ -173,9 +175,9 @@ export default function OrdersPage() {
                     </div>
                   </div>
 
-                  <div className="space-y-3 mb-4">
+                  <div className="space-y-3 mb-6">
                     {order.items.map((item: OrderItem) => (
-                      <div key={`${order.order_id}-${item.product_id}`} className="flex gap-4 p-3 rounded-lg bg-muted/50">
+                      <div key={`${order.order_id}-${item.product_id}`} className="flex gap-4 p-4 rounded-xl border border-white/5 bg-secondary/30">
                         <img
                           src={item.product_image}
                           alt={item.product_name}
@@ -184,7 +186,7 @@ export default function OrdersPage() {
                         <div className="flex-1">
                           <p className="font-medium">{item.product_name}</p>
                           <p className="text-sm text-muted-foreground">Qty: {item.quantity}</p>
-                          <p className="text-sm font-semibold mt-1">${item.subtotal.toFixed(2)}</p>
+                          <p className="text-sm font-semibold mt-1">₹{item.subtotal.toFixed(2)}</p>
                         </div>
                       </div>
                     ))}
@@ -197,7 +199,7 @@ export default function OrdersPage() {
                     </div>
                     <div className="text-right">
                       <p className="text-sm text-muted-foreground">Total</p>
-                      <p className="font-display text-xl font-bold">${order.total_price.toFixed(2)}</p>
+                      <p className="font-display text-xl font-bold">₹{order.total_price.toFixed(2)}</p>
                     </div>
                   </div>
                 </div>

@@ -59,22 +59,26 @@ const LoginPage = () => {
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-background via-background to-muted/20 p-4">
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="w-full max-w-md"
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+        className="w-full max-w-md relative z-10"
       >
-        <div className="rounded-2xl border border-border bg-card p-8 shadow-lg">
+        <div className="rounded-3xl glassmorphism-card shadow-elevated p-8 md:p-10 relative overflow-hidden border-white/10 backdrop-blur-3xl">
+          {/* Decorative glowing orbs */}
+          <div className="absolute -top-32 -right-32 w-64 h-64 bg-accent/30 rounded-full blur-[80px] opacity-60 pointer-events-none"></div>
+          <div className="absolute -bottom-32 -left-32 w-64 h-64 bg-accent/20 rounded-full blur-[80px] opacity-60 pointer-events-none"></div>
+
           {/* Logo/Header */}
           <div className="mb-8 text-center">
-            <Link to="/" className="inline-flex items-center gap-2 mb-4">
-              <Sparkles className="h-6 w-6 text-accent" />
-              <span className="font-display text-2xl font-bold">
-                SmartCart <span className="text-accent">AI</span>
+            <Link to="/" className="inline-flex items-center gap-2 mb-6 hover:scale-105 transition-transform">
+              <Sparkles className="h-8 w-8 text-accent animate-pulse" />
+              <span className="font-display text-3xl font-black tracking-tight">
+                SmartCart <span className="text-gradient">AI</span>
               </span>
             </Link>
-            <h1 className="font-display text-3xl font-bold">Welcome back</h1>
-            <p className="mt-2 text-sm text-muted-foreground">
+            <h1 className="font-display text-4xl font-extrabold tracking-tight">Welcome back</h1>
+            <p className="mt-3 text-base text-muted-foreground">
               Sign in to your account to continue shopping
             </p>
           </div>
@@ -137,7 +141,7 @@ const LoginPage = () => {
 
             <Button
               type="submit"
-              className="w-full h-11 gradient-accent text-accent-foreground font-semibold shadow-accent-glow hover:opacity-90"
+              className="w-full h-14 rounded-xl gradient-accent text-white font-bold text-lg shadow-accent-glow hover:scale-[1.02] transition-transform duration-300 border-0"
               disabled={loading}
             >
               {loading ? (

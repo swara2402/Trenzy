@@ -3,7 +3,7 @@ import type { Product } from "@/lib/data";
 import { getAuthToken, getStoredUser, type AuthUser } from "@/lib/auth";
 import { getCart as fetchCart, updateCart as saveCart } from "@/lib/user";
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5001";
 
 export interface CartItem {
   product: Product;

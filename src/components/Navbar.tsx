@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "react-router-dom";
-import { Search, ShoppingBag, User, Sparkles, Menu, X, LogOut, Settings, Shield, Heart } from "lucide-react";
+import { Search, ShoppingBag, User, Sparkles, Menu, X, LogOut, Settings, Shield, Heart, Sun, Moon, Users2, Store } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
 import { useWishlist } from "@/contexts/WishlistContext";
 import { useState, useEffect } from "react";
@@ -14,6 +14,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useTheme } from "next-themes";
 
 const Navbar = () => {
   const { totalItems, setIsOpen } = useCart();
@@ -23,16 +24,26 @@ const Navbar = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [user, setUser] = useState<AuthUser | null>(null);
   const navigate = useNavigate();
+  const { theme, setTheme } = useTheme();
 
   useEffect(() => {
     // Check initial user
-    const storedUser = getStoredUser();
-    setUser(storedUser);
+    const checkUser = () => {
+      const storedUser = getStoredUser();
+      setUser(storedUser);
+    };
+
+    checkUser();
+
+    // Listen for cross-component auth changes
+    window.addEventListener("auth-change", checkUser);
+    return () => window.removeEventListener("auth-change", checkUser);
   }, []);
 
   const handleLogout = async () => {
     await logout();
     setUser(null);
+    window.dispatchEvent(new Event("auth-change"));
     navigate("/");
   };
 
@@ -45,32 +56,37 @@ const Navbar = () => {
     }
   };
 
+  const toggleTheme = () => {
+    setTheme(theme === "dark" ? "light" : "dark");
+  };
+
   const displayName = user?.username || (user?.email ? user.email.split("@")[0] : "");
   const isAdmin = isAdminUser(user);
+  const isVendor = user?.role === "vendor";
 
   return (
-    <nav className="sticky top-0 z-50 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <nav className="sticky top-0 z-50 border-b border-border/40 bg-background/60 backdrop-blur-xl supports-[backdrop-filter]:bg-background/40 transition-all duration-300">
       <div className="container mx-auto flex justify-between items-center p-4">
         {/* Logo */}
-        <Link to="/" className="flex items-center gap-2">
-          <Sparkles className="h-5 w-5 text-accent" />
+        <Link to="/" className="flex items-center gap-2 group">
+          <Sparkles className="h-5 w-5 text-accent transition-transform duration-300 group-hover:scale-110 group-hover:rotate-12" />
           <span className="font-display text-xl font-bold tracking-tight">
-            SmartCart <span className="text-accent">AI</span>
+            SmartCart <span className="text-gradient">AI</span>
           </span>
         </Link>
 
         {/* Desktop Nav */}
         <nav className="hidden items-center gap-8 md:flex">
-          <Link to="/products" className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">
+          <Link to="/products" className="relative text-sm font-medium text-muted-foreground transition-colors hover:text-foreground after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-0 after:bg-accent after:transition-all hover:after:w-full">
             Shop
           </Link>
-          <Link to="/products?category=electronics" className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">
+          <Link to="/products?category=electronics" className="relative text-sm font-medium text-muted-foreground transition-colors hover:text-foreground after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-0 after:bg-accent after:transition-all hover:after:w-full">
             Electronics
           </Link>
-          <Link to="/products?category=fashion" className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">
+          <Link to="/products?category=fashion" className="relative text-sm font-medium text-muted-foreground transition-colors hover:text-foreground after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-0 after:bg-accent after:transition-all hover:after:w-full">
             Fashion
           </Link>
-          <Link to="/products?category=fitness" className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">
+          <Link to="/products?category=fitness" className="relative text-sm font-medium text-muted-foreground transition-colors hover:text-foreground after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-0 after:bg-accent after:transition-all hover:after:w-full">
             Fitness
           </Link>
         </nav>
@@ -104,6 +120,15 @@ const Navbar = () => {
             title="Search products"
           >
             <Search className="h-5 w-5" />
+          </button>
+
+          {/* Theme Toggle */}
+          <button
+            onClick={toggleTheme}
+            className="rounded-lg p-2 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+            title="Toggle theme"
+          >
+            {theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
           </button>
 
           {/* User Greeting + Dropdown */}
@@ -151,11 +176,25 @@ const Navbar = () => {
                       Wishlist
                     </Link>
                   </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link to="/groups" className="cursor-pointer">
+                      <Users2 className="mr-2 h-4 w-4" />
+                      Groups
+                    </Link>
+                  </DropdownMenuItem>
                   {isAdmin && (
                     <DropdownMenuItem asChild>
                       <Link to="/admin" className="cursor-pointer">
                         <Shield className="mr-2 h-4 w-4" />
                         Admin Panel
+                      </Link>
+                    </DropdownMenuItem>
+                  )}
+                  {isVendor && (
+                    <DropdownMenuItem asChild>
+                      <Link to="/vendor" className="cursor-pointer">
+                        <Store className="mr-2 h-4 w-4" />
+                        Vendor Dashboard
                       </Link>
                     </DropdownMenuItem>
                   )}
@@ -233,7 +272,7 @@ const Navbar = () => {
                   <Button variant="outline" size="sm">Login</Button>
                 </Link>
                 <Link to="/signup">
-                  <Button variant="default" size="sm" className="gradient-accent text-accent-foreground shadow-accent-glow">Sign Up</Button>
+                  <Button variant="default" size="sm" className="gradient-accent border-0 shadow-accent-glow hover:scale-105 transition-transform duration-300">Sign Up</Button>
                 </Link>
               </>
             )}
@@ -292,6 +331,14 @@ const Navbar = () => {
                         </Button>
                       </Link>
                     )}
+                    {isVendor && (
+                      <Link to="/vendor" onClick={() => setMobileMenuOpen(false)} className="block">
+                        <Button variant="outline" className="w-full flex items-center justify-center gap-2">
+                          <Store className="h-4 w-4" />
+                          Vendor Dashboard
+                        </Button>
+                      </Link>
+                    )}
                     <Button
                       variant="outline"
                       onClick={() => {
@@ -310,7 +357,7 @@ const Navbar = () => {
                       <Button variant="outline" className="w-full">Login</Button>
                     </Link>
                     <Link to="/signup" onClick={() => setMobileMenuOpen(false)} className="block">
-                      <Button variant="default" className="w-full gradient-accent text-accent-foreground shadow-accent-glow">Sign Up</Button>
+                      <Button variant="default" className="w-full gradient-accent border-0 shadow-accent-glow">Sign Up</Button>
                     </Link>
                   </>
                 )}
@@ -324,3 +371,4 @@ const Navbar = () => {
 };
 
 export default Navbar;
+

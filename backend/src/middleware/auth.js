@@ -10,6 +10,9 @@ export function requireAuth(req, res, next) {
 
   try {
     const decoded = verifyAuthToken(token, process.env.JWT_SECRET);
+    if (!decoded || typeof decoded !== "object" || !decoded.sub) {
+      return res.status(401).json({ message: "Invalid authentication token payload." });
+    }
     req.auth = decoded;
     return next();
   } catch {

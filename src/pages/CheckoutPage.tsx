@@ -10,6 +10,7 @@ import { createOrder, paymentMethodLabel, type Address, type PaymentMethod } fro
 import { getStoredUser, getCurrentUser, type AuthUser } from "@/lib/auth";
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
+import CartSuggestions from "@/components/CartSuggestions";
 
 export default function CheckoutPage() {
   const { items, totalPrice, clearCart } = useCart();
@@ -139,13 +140,13 @@ export default function CheckoutPage() {
           <ArrowLeft className="h-4 w-4" /> Back to home
         </Link>
 
-        <div className="max-w-4xl mx-auto">
-          <h1 className="font-display text-3xl font-bold mb-8">Checkout</h1>
+        <div className="max-w-5xl mx-auto">
+          <h1 className="font-display text-4xl font-extrabold mb-10 tracking-tight">Checkout</h1>
 
-          <div className="grid gap-8 md:grid-cols-2">
-            <div className="order-2 md:order-1">
-              <div className="rounded-xl border border-border bg-card p-6">
-                <h2 className="font-display text-xl font-bold mb-4">Order Summary</h2>
+          <div className="grid gap-12 md:grid-cols-2">
+            <div className="order-2 md:order-1 space-y-8">
+              <div className="rounded-3xl glassmorphism-card shadow-elevated p-8">
+                <h2 className="font-display text-2xl font-bold mb-6">Order Summary</h2>
                 <div className="space-y-4">
                   {items.map(({ product, quantity }) => (
                     <div key={product.id} className="flex gap-4">
@@ -157,7 +158,7 @@ export default function CheckoutPage() {
                       <div className="flex-1">
                         <p className="font-medium">{product.name}</p>
                         <p className="text-sm text-muted-foreground">Qty: {quantity}</p>
-                        <p className="text-sm font-semibold mt-1">${(product.price * quantity).toFixed(2)}</p>
+                        <p className="text-sm font-semibold mt-1">₹{(product.price * quantity).toFixed(2)}</p>
                       </div>
                     </div>
                   ))}
@@ -165,16 +166,17 @@ export default function CheckoutPage() {
                 <div className="mt-6 pt-6 border-t border-border">
                   <div className="flex justify-between items-center">
                     <span className="text-lg font-semibold">Total</span>
-                    <span className="font-display text-2xl font-bold">${totalPrice.toFixed(2)}</span>
+                    <span className="font-display text-2xl font-bold">₹{totalPrice.toFixed(2)}</span>
                   </div>
                 </div>
               </div>
+              <CartSuggestions />
             </div>
 
             <div className="order-1 md:order-2">
-              <form onSubmit={handleSubmit} className="space-y-6">
-                <div className="rounded-xl border border-border bg-card p-6">
-                  <h2 className="font-display text-xl font-bold mb-4">Shipping Information</h2>
+              <form onSubmit={handleSubmit} className="space-y-8">
+                <div className="rounded-3xl glassmorphism-card shadow-elevated p-8">
+                  <h2 className="font-display text-2xl font-bold mb-6">Shipping Information</h2>
                   <div className="space-y-4">
                     <div>
                       <Label htmlFor="fullName">Full Name *</Label>
@@ -270,8 +272,8 @@ export default function CheckoutPage() {
                   </div>
                 </div>
 
-                <div className="rounded-xl border border-border bg-card p-6">
-                  <h2 className="font-display text-xl font-bold mb-4">Payment Method</h2>
+                <div className="rounded-3xl glassmorphism-card shadow-elevated p-8">
+                  <h2 className="font-display text-2xl font-bold mb-6">Payment Method</h2>
                   <RadioGroup value={paymentMethod} onValueChange={(value) => setPaymentMethod(value as PaymentMethod)}>
                     <div className="flex items-center space-x-2 p-4 rounded-lg border border-border hover:bg-secondary cursor-pointer">
                       <RadioGroupItem value="cod" id="cod" />
@@ -306,8 +308,8 @@ export default function CheckoutPage() {
                   </RadioGroup>
                 </div>
 
-                <div className="rounded-xl border border-border bg-card p-6">
-                  <h2 className="font-display text-xl font-bold mb-4">Review Before Placing</h2>
+                <div className="rounded-3xl glassmorphism-card shadow-elevated p-8">
+                  <h2 className="font-display text-2xl font-bold mb-6">Review Before Placing</h2>
                   <div className="space-y-3 text-sm">
                     <p>
                       <span className="text-muted-foreground">Shipping to:</span>{" "}
@@ -337,10 +339,10 @@ export default function CheckoutPage() {
 
                 <Button
                   type="submit"
-                  className="w-full h-12 gradient-accent text-accent-foreground font-semibold shadow-accent-glow hover:opacity-90"
+                  className="w-full h-16 rounded-2xl gradient-accent text-white font-bold text-lg shadow-accent-glow hover:scale-[1.02] transition-transform duration-300"
                   disabled={loading || !isAddressValid || !reviewAccepted}
                 >
-                  {loading ? "Placing Order..." : `Place Order - $${totalPrice.toFixed(2)}`}
+                  {loading ? "Placing Order..." : `Place Order - ₹${totalPrice.toFixed(2)}`}
                 </Button>
               </form>
             </div>

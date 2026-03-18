@@ -1,9 +1,10 @@
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5001";
 
 export interface AuthUser {
   id: string;
   username: string;
   email: string;
+  role: "buyer" | "vendor" | "admin";
   createdAt: string;
   isAdmin?: boolean;
 }
@@ -57,6 +58,7 @@ export function clearAuth(): void {
   try {
     window.localStorage.removeItem(AUTH_TOKEN_KEY);
     window.localStorage.removeItem(AUTH_USER_KEY);
+    window.dispatchEvent(new Event("auth-change"));
   } catch {
     // ignore localStorage errors
   }
@@ -82,20 +84,22 @@ export async function login(
   const data: AuthResponse = await response.json();
   setAuthToken(data.token);
   setStoredUser(data.user);
+  window.dispatchEvent(new Event("auth-change"));
   return { user: data.user, token: data.token };
 }
 
 export async function signup(
   username: string,
   email: string,
-  password: string
+  password: string,
+  role: "buyer" | "vendor" = "buyer"
 ): Promise<{ user: AuthUser; token: string }> {
   const response = await fetch(`${API_BASE_URL}/api/auth/signup`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ username, email, password }),
+    body: JSON.stringify({ username, email, password, role }),
   });
 
   if (!response.ok) {
@@ -106,6 +110,7 @@ export async function signup(
   const data: AuthResponse = await response.json();
   setAuthToken(data.token);
   setStoredUser(data.user);
+  window.dispatchEvent(new Event("auth-change"));
   return { user: data.user, token: data.token };
 }
 
@@ -129,6 +134,7 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
 
   const data: MeResponse = await response.json();
   setStoredUser(data.user);
+  window.dispatchEvent(new Event("auth-change"));
   return data.user;
 }
 

@@ -62,11 +62,11 @@ export default function OrderDetailsPage() {
           <ArrowLeft className="h-4 w-4" /> Back to orders
         </Link>
 
-        <div className="max-w-4xl mx-auto space-y-6">
-          <div className="rounded-xl border border-border bg-card p-6">
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-              <div className="space-y-2">
-                <h1 className="font-display text-2xl font-bold">Order {order.order_id}</h1>
+        <div className="max-w-5xl mx-auto space-y-8">
+          <div className="rounded-3xl glassmorphism-card shadow-elevated p-8">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+              <div className="space-y-3">
+                <h1 className="font-display text-3xl font-bold">Order {order.order_id}</h1>
                 <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
                   <div className="flex items-center gap-1">
                     <Calendar className="h-4 w-4" />
@@ -84,11 +84,11 @@ export default function OrderDetailsPage() {
             </div>
           </div>
 
-          <div className="rounded-xl border border-border bg-card p-6">
-            <h2 className="font-display text-xl font-bold mb-4">Items</h2>
-            <div className="space-y-3">
+          <div className="rounded-3xl glassmorphism-card shadow-elevated p-8">
+            <h2 className="font-display text-2xl font-bold mb-6">Items</h2>
+            <div className="space-y-4">
               {order.items.map((item: OrderItem) => (
-                <div key={`${order.order_id}-${item.product_id}`} className="flex gap-4 p-3 rounded-lg bg-muted/50">
+                <div key={`${order.order_id}-${item.product_id}`} className="flex gap-4 p-4 rounded-xl border border-white/5 bg-secondary/30">
                   <img
                     src={item.product_image}
                     alt={item.product_name}
@@ -97,7 +97,7 @@ export default function OrderDetailsPage() {
                   <div className="flex-1">
                     <p className="font-medium">{item.product_name}</p>
                     <p className="text-sm text-muted-foreground">Qty: {item.quantity}</p>
-                    <p className="text-sm font-semibold mt-1">${item.subtotal.toFixed(2)}</p>
+                    <p className="text-sm font-semibold mt-1">₹{item.subtotal.toFixed(2)}</p>
                   </div>
                 </div>
               ))}
@@ -105,15 +105,15 @@ export default function OrderDetailsPage() {
             <div className="flex justify-end pt-4 mt-4 border-t border-border">
               <div className="text-right">
                 <p className="text-sm text-muted-foreground">Total</p>
-                <p className="font-display text-xl font-bold">${order.total_price.toFixed(2)}</p>
+                <p className="font-display text-xl font-bold">₹{order.total_price.toFixed(2)}</p>
               </div>
             </div>
           </div>
 
-          <div className="rounded-xl border border-border bg-card p-6">
-            <h2 className="font-display text-xl font-bold mb-4">Shipping Address</h2>
-            <div className="flex items-start gap-2 text-sm">
-              <MapPin className="h-4 w-4 mt-0.5 text-muted-foreground" />
+          <div className="rounded-3xl glassmorphism-card shadow-elevated p-8">
+            <h2 className="font-display text-2xl font-bold mb-6">Shipping Address</h2>
+            <div className="flex items-start gap-3 text-base">
+              <MapPin className="h-5 w-5 mt-1 text-accent" />
               <div className="space-y-1">
                 <p className="font-medium">{order.address.fullName}</p>
                 <p className="text-muted-foreground">{order.address.addressLine1}</p>

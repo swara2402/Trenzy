@@ -1,6 +1,8 @@
 import { Link } from "react-router-dom";
 import { Star, ShoppingBag, Heart } from "lucide-react";
 import { motion } from "framer-motion";
+import { askFriendsForOpinion } from "@/lib/suggestions";
+import AskFriendsButton from "@/components/AskFriendsButton";
 import type { Product } from "@/lib/data";
 import { useCart } from "@/contexts/CartContext";
 import { useWishlist } from "@/contexts/WishlistContext";
@@ -31,9 +33,9 @@ export default function ProductCard({ product, index = 0 }: Props) {
       transition={{ duration: 0.4, delay: index * 0.05 }}
       className="group"
     >
-      <div className="relative overflow-hidden rounded-xl border border-border bg-card shadow-card transition-all duration-300 hover:shadow-card-hover">
+      <div className="relative overflow-hidden rounded-2xl glassmorphism-card shadow-card transition-all duration-500 hover:shadow-accent-glow hover:-translate-y-1">
         <Link to={`/product/${product.id}`}>
-          <div className="aspect-square overflow-hidden">
+          <div className="aspect-[4/5] overflow-hidden bg-secondary/50">
             <img
               src={product.image}
               alt={product.name}
@@ -52,7 +54,7 @@ export default function ProductCard({ product, index = 0 }: Props) {
         <button
           onClick={handleWishlistClick}
           aria-label={isInWishlist ? `Remove ${product.name} from wishlist` : `Add ${product.name} to wishlist`}
-          className={`absolute left-3 top-3 flex h-9 w-9 items-center justify-center rounded-full bg-background/80 backdrop-blur-sm shadow-md transition-all duration-300 hover:bg-accent hover:text-accent-foreground ${isInWishlist ? "text-accent" : "text-muted-foreground opacity-0 group-hover:opacity-100"}`}
+          className={`absolute left-3 top-3 flex h-9 w-9 items-center justify-center rounded-full backdrop-blur-md shadow-sm transition-all duration-300 hover:scale-110 active:scale-95 ${isInWishlist ? "bg-accent/10 text-accent" : "bg-white/50 dark:bg-black/50 text-muted-foreground opacity-0 group-hover:opacity-100 hover:bg-white dark:hover:bg-black"}`}
         >
           <Heart className={`h-4 w-4 ${isInWishlist ? "fill-current" : ""}`} />
         </button>
@@ -60,7 +62,7 @@ export default function ProductCard({ product, index = 0 }: Props) {
         <button
           onClick={() => addToCart(product)}
           aria-label={`Add ${product.name} to cart`}
-          className="absolute bottom-[calc(50%+8px)] right-3 flex h-9 w-9 translate-y-2 items-center justify-center rounded-full bg-primary text-primary-foreground opacity-0 shadow-md transition-all duration-300 hover:bg-accent hover:text-accent-foreground group-hover:translate-y-0 group-hover:opacity-100"
+          className="absolute bottom-[calc(50%+8px)] right-3 flex h-10 w-10 translate-y-4 items-center justify-center rounded-full gradient-accent text-white opacity-0 shadow-accent-glow transition-all duration-500 hover:scale-110 active:scale-95 group-hover:translate-y-0 group-hover:opacity-100 z-10"
         >
           <ShoppingBag className="h-4 w-4" />
         </button>
@@ -72,16 +74,21 @@ export default function ProductCard({ product, index = 0 }: Props) {
               {product.name}
             </h3>
           </Link>
-          <div className="mt-2 flex items-center gap-1">
-            <Star className="h-3.5 w-3.5 fill-accent text-accent" />
-            <span className="text-xs font-medium">{product.rating}</span>
-            <span className="text-xs text-muted-foreground">({product.reviewCount})</span>
+          <div className="mt-2 flex items-center gap-1.5">
+            <Star className="h-4 w-4 fill-[#F59E0B] text-[#F59E0B]" />
+            <span className="text-sm font-semibold">{product.rating}</span>
+            <span className="text-xs text-muted-foreground ml-1">({product.reviewCount} reviews)</span>
           </div>
-          <div className="mt-2 flex items-center gap-2">
-            <span className="font-display text-base font-bold">₹{product.price}</span>
-            {product.originalPrice && (
-              <span className="text-xs text-muted-foreground line-through">₹{product.originalPrice}</span>
-            )}
+          <div className="mt-3 flex items-center justify-between">
+            <div className="flex items-baseline gap-2">
+              <span className="font-display text-lg font-bold">₹{product.price}</span>
+              {product.originalPrice && (
+                <span className="text-xs font-medium text-muted-foreground line-through decoration-muted-foreground/50">₹{product.originalPrice}</span>
+              )}
+            </div>
+          </div>
+          <div className="mt-4">
+            <AskFriendsButton productId={product.id} />
           </div>
         </div>
       </div>

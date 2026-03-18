@@ -15,7 +15,7 @@ export default function CartDrawer() {
 
   return (
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
-      <SheetContent className="flex w-full flex-col sm:max-w-md">
+      <SheetContent className="flex w-full flex-col sm:max-w-md bg-background/80 backdrop-blur-2xl border-l border-border/50">
         <SheetHeader>
           <SheetTitle className="font-display flex items-center gap-2">
             <ShoppingBag className="h-5 w-5" /> Your Cart
@@ -29,18 +29,18 @@ export default function CartDrawer() {
           </div>
         ) : (
           <>
-            <div className="flex-1 space-y-4 overflow-y-auto py-4">
+            <div className="flex-1 space-y-4 overflow-y-auto py-4 px-1 pr-3 custom-scrollbar">
               {items.map(({ product, quantity }) => (
-                <div key={product.id} className="flex gap-3 rounded-lg border border-border p-3">
+                <div key={product.id} className="flex gap-4 rounded-2xl border border-white/5 bg-secondary/30 p-4 hover:bg-secondary/50 transition-colors">
                   <img
                     src={product.image}
                     alt={product.name}
-                    className="h-20 w-20 rounded-md object-cover"
+                    className="h-24 w-24 rounded-xl object-cover bg-background"
                   />
-                  <div className="flex flex-1 flex-col justify-between">
+                  <div className="flex flex-1 flex-col justify-between py-1">
                     <div>
-                      <p className="text-sm font-medium leading-tight">{product.name}</p>
-                      <p className="text-xs text-muted-foreground">{product.brand}</p>
+                      <p className="text-sm font-semibold leading-tight">{product.name}</p>
+                      <p className="text-xs font-medium text-accent mt-1">{product.brand}</p>
                     </div>
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
@@ -59,7 +59,7 @@ export default function CartDrawer() {
                         </button>
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className="text-sm font-semibold">${(product.price * quantity).toFixed(2)}</span>
+                        <span className="text-sm font-semibold">₹{(product.price * quantity).toFixed(2)}</span>
                         <button
                           onClick={() => removeFromCart(product.id)}
                           className="text-muted-foreground hover:text-destructive"
@@ -75,14 +75,14 @@ export default function CartDrawer() {
 
             <div className="border-t border-border pt-4 space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Subtotal</span>
-                <span className="text-lg font-bold font-display">${totalPrice.toFixed(2)}</span>
+                <span className="text-sm font-medium text-muted-foreground">Subtotal</span>
+                <span className="text-xl font-bold font-display tracking-tight">₹{totalPrice.toFixed(2)}</span>
               </div>
               <Button
                 onClick={handleCheckout}
-                className="w-full gradient-accent text-accent-foreground font-semibold shadow-accent-glow hover:opacity-90"
+                className="w-full h-12 rounded-xl gradient-accent text-white font-bold text-base shadow-accent-glow hover:scale-[1.02] transition-transform duration-300 border-0"
               >
-                Checkout — ${totalPrice.toFixed(2)}
+                Checkout — ₹{totalPrice.toFixed(2)}
               </Button>
               <button
                 onClick={clearCart}

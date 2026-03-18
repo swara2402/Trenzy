@@ -18,20 +18,43 @@ const cartItemSchema = new mongoose.Schema({
   quantity: { type: Number, required: true, min: 1 },
 });
 
+const browsingHistorySchema = new mongoose.Schema({
+  productId: { type: String, required: true },
+  viewedAt: { type: Date, default: Date.now },
+});
+
+const userPreferenceSchema = new mongoose.Schema({
+  categories: { type: [String], default: [] },
+  brands: { type: [String], default: [] },
+  priceRange: {
+    min: { type: Number, default: 0 },
+    max: { type: Number, default: 100000 },
+  },
+  tags: { type: [String], default: [] },
+}, { _id: false });
+
 const userSchema = new mongoose.Schema(
   {
     username: { type: String, required: true, trim: true, minlength: 2, maxlength: 40 },
     email: { type: String, required: true, unique: true, lowercase: true, trim: true },
     passwordHash: { type: String, required: true },
-    isAdmin: { type: Boolean, default: false },
+    role: { type: String, enum: ["buyer", "vendor", "admin"], default: "buyer" },
+    isAdmin: { type: Boolean, default: false }, // Keeping for backwards-compatibility temporary
+    monthlyBudget: { type: Number, default: 0, min: 0 },
+    currentMonthSpending: { type: Number, default: 0, min: 0 },
     cart: { type: [cartItemSchema], default: [] },
     wishlist: { type: [String], default: [] },
     addresses: { type: [addressSchema], default: [] },
+    browsingHistory: { type: [browsingHistorySchema], default: [] },
+    preferences: { type: userPreferenceSchema, default: () => ({}) },
+    purchaseHistory: { type: [String], default: [] },
+    groups: { type: [String], default: [] },
   },
   { timestamps: true }
 );
 
-userSchema.index({ email: 1 }, { unique: true });
+// No explicit index needed as unique: true is set in the schema definition
+// userSchema.index({ email: 1 }, { unique: true });
 
 export const User = mongoose.model("User", userSchema);
 

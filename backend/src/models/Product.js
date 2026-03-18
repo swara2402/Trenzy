@@ -1,5 +1,13 @@
 import mongoose from "mongoose";
 
+const priceHistoryEntrySchema = new mongoose.Schema(
+  {
+    price: { type: Number, required: true, min: 0 },
+    recordedAt: { type: Date, default: Date.now },
+  },
+  { _id: false }
+);
+
 const productSchema = new mongoose.Schema(
   {
     id: { type: String, required: true, unique: true },
@@ -16,11 +24,15 @@ const productSchema = new mongoose.Schema(
     description: { type: String, default: "" },
     features: { type: [String], default: [] },
     inStock: { type: Boolean, default: true },
+    stock: { type: Number, default: 100, min: 0 },
+    lowStockThreshold: { type: Number, default: 5, min: 0 },
     popularity: { type: Number, default: 0, min: 0 },
+    priceHistory: { type: [priceHistoryEntrySchema], default: [] },
   },
   { timestamps: true }
 );
 
-productSchema.index({ id: 1 }, { unique: true });
+// No explicit index needed as unique: true is set in the schema definition
+// productSchema.index({ id: 1 }, { unique: true });
 
 export const Product = mongoose.model("Product", productSchema);

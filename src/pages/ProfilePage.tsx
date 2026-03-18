@@ -9,7 +9,7 @@ import { getStoredUser, logout, getAuthToken, type AuthUser } from "@/lib/auth";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5001";
 
 interface Address {
   _id?: string;
@@ -27,6 +27,8 @@ interface Address {
 
 interface UserProfile extends AuthUser {
   addresses: Address[];
+  monthlyBudget: number;
+  currentMonthSpending: number;
 }
 
 export default function ProfilePage() {
@@ -227,16 +229,16 @@ export default function ProfilePage() {
           <ArrowLeft className="h-4 w-4" /> Back to home
         </Link>
 
-        <div className="max-w-4xl mx-auto">
-          <h1 className="font-display text-3xl font-bold mb-8">My Profile</h1>
+        <div className="max-w-5xl mx-auto space-y-8">
+          <h1 className="font-display text-4xl font-extrabold mb-8 tracking-tight">My Profile</h1>
 
           {/* Profile Section */}
-          <Card className="mb-6">
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
+          <Card className="rounded-3xl glassmorphism-card shadow-elevated border-white/5 overflow-hidden">
+            <CardHeader className="bg-secondary/30 border-b border-border/50 pb-6">
+              <CardTitle className="flex items-center justify-between font-display text-2xl">
                 <span>Account Information</span>
                 {!editingProfile && (
-                  <Button variant="outline" size="sm" onClick={() => setEditingProfile(true)}>
+                  <Button variant="outline" size="sm" onClick={() => setEditingProfile(true)} className="rounded-xl">
                     <Edit className="mr-2 h-4 w-4" />
                     Edit
                   </Button>
@@ -277,12 +279,12 @@ export default function ProfilePage() {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  <div className="flex items-center gap-4">
-                    <div className="h-16 w-16 rounded-full bg-accent/10 flex items-center justify-center">
-                      <User className="h-8 w-8 text-accent" />
+                  <div className="flex items-center gap-6">
+                    <div className="h-20 w-20 rounded-full bg-accent/10 flex items-center justify-center shadow-accent-glow">
+                      <User className="h-10 w-10 text-accent" />
                     </div>
                     <div>
-                      <h2 className="font-display text-xl font-bold">
+                      <h2 className="font-display text-3xl font-bold tracking-tight">
                         {profile?.username || "User"}
                       </h2>
                       <p className="text-sm text-muted-foreground flex items-center gap-1">
@@ -297,9 +299,9 @@ export default function ProfilePage() {
           </Card>
 
           {/* Addresses Section */}
-          <Card className="mb-6">
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
+          <Card className="rounded-3xl glassmorphism-card shadow-elevated border-white/5 overflow-hidden">
+            <CardHeader className="bg-secondary/30 border-b border-border/50 pb-6">
+              <CardTitle className="flex items-center justify-between font-display text-2xl">
                 <span>Saved Addresses</span>
                 <Button variant="outline" size="sm" onClick={() => {
                   setShowAddressForm(true);
@@ -311,6 +313,76 @@ export default function ProfilePage() {
                 </Button>
               </CardTitle>
             </CardHeader>
+
+          {/* Budget Guardian Section */}
+          <Card className="rounded-3xl glassmorphism-card shadow-elevated border-white/5 overflow-hidden">
+            <CardHeader className="bg-secondary/30 border-b border-border/50 pb-6">
+              <CardTitle className="font-display text-2xl">Budget Guardian</CardTitle>
+            </CardHeader>
+            <CardContent className="pt-6">
+              <div className="space-y-6">
+                <div className="grid gap-2">
+                  <Label>Monthly Budget (₹)</Label>
+                  <Input
+                    type="number"
+                    value={profile?.monthlyBudget || 0}
+                    onChange={async (e) => {
+                      const budget = parseFloat(e.target.value) || 0;
+                      if (budget < 0) return;
+                      setSaving(true);
+                      try {
+                        const token = getAuthToken();
+                        const response = await fetch(`${API_BASE_URL}/api/users/budget`, {
+                          method: "PUT",
+                          headers: {
+                            "Content-Type": "application/json",
+                            Authorization: `Bearer ${token}`,
+                          },
+                          body: JSON.stringify({ monthlyBudget: budget }),
+                        });
+                        if (response.ok) {
+                          await fetchUserProfile(user!.id);
+                        }
+                      } catch (error) {
+                        console.error("Budget update failed:", error);
+                      } finally {
+                        setSaving(false);
+                      }
+                    }}
+                    min="0"
+                    step="1000"
+                    placeholder="Enter monthly budget"
+                    className="w-48"
+                  />
+                </div>
+                {profile?.monthlyBudget > 0 && (
+                  <div>
+                    <div className="flex justify-between text-sm mb-2">
+                      <span>Current Spending</span>
+                      <span>₹{profile.currentMonthSpending.toLocaleString()} / ₹{profile.monthlyBudget.toLocaleString()}</span>
+                    </div>
+                    <div className="relative mt-2">
+                      <div className="h-3 bg-secondary/50 rounded-full overflow-hidden drop-shadow-inner border border-white/5">
+                        <div 
+                          className={`h-full rounded-full transition-all duration-700 ease-out shadow-sm ${profile.currentMonthSpending / profile.monthlyBudget >= 0.9 ? 'bg-destructive shadow-destructive/50' : 'bg-accent shadow-accent-glow'}`}
+                          style={{ width: `${Math.min((profile.currentMonthSpending / profile.monthlyBudget) * 100, 100)}%` }}
+                        />
+                      </div>
+                      <span className="absolute right-0 -top-6 text-xs font-bold text-foreground">
+                        {Math.round((profile.currentMonthSpending / profile.monthlyBudget) * 100)}%
+                      </span>
+                    </div>
+                    {profile.currentMonthSpending / profile.monthlyBudget >= 0.9 && (
+                      <p className="mt-2 text-sm text-destructive font-medium flex items-center gap-1">
+                        <Check className="h-4 w-4" />
+                        Budget alert: You're near your limit. Consider cheaper alternatives.
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
             <CardContent>
               {showAddressForm ? (
                 <div className="space-y-4 p-4 border rounded-lg bg-muted/30">
@@ -417,16 +489,16 @@ export default function ProfilePage() {
                   </div>
                 </div>
               ) : profile?.addresses && profile.addresses.length > 0 ? (
-                <div className="grid gap-4 md:grid-cols-2">
+                <div className="grid gap-6 md:grid-cols-2 pt-6">
                   {profile.addresses.map((address) => (
-                    <div key={address._id} className="relative p-4 border rounded-lg">
+                    <div key={address._id} className="relative p-6 border border-white/10 rounded-2xl bg-secondary/20 hover:bg-secondary/30 transition-colors">
                       {address.isDefault && (
-                        <span className="absolute top-2 right-2 text-xs bg-accent text-accent-foreground px-2 py-0.5 rounded">
+                        <span className="absolute top-4 right-4 text-xs font-bold tracking-wider uppercase bg-accent/10 text-accent px-3 py-1 rounded-full border border-accent/20">
                           Default
                         </span>
                       )}
-                      <div className="flex items-start gap-2 mb-2">
-                        <MapPin className="h-4 w-4 text-muted-foreground mt-0.5" />
+                      <div className="flex items-start gap-3 mb-4">
+                        <MapPin className="h-5 w-5 text-accent mt-0.5" />
                         <div>
                           <p className="font-medium">{address.label}</p>
                           <p className="text-sm">{address.fullName}</p>
